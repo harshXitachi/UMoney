@@ -1,11 +1,6 @@
 import React from 'react';
-import { DashboardStats } from '../types';
 
-interface CommissionCardProps {
-  stats: DashboardStats;
-}
-
-const CommissionCard: React.FC<CommissionCardProps> = ({ stats }) => {
+const CommissionCard = ({ stats }) => {
   return (
     <div className="rounded-2xl p-5 shadow-lg bg-gradient-to-b from-primary to-secondary text-white relative overflow-hidden">
       {/* Background Decorative Circle */}

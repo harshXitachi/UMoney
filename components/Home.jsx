@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const Home: React.FC = () => {
+const Home = () => {
   const [showWithdraw, setShowWithdraw] = useState(false);
   const navigate = useNavigate();
 

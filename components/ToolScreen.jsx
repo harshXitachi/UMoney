@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { db_updateUserProfile } from '../firebase';
-import { LinkedAccount } from '../types';
+import { db_updateUserProfile } from '../firebase.js';
 
-const ToolScreen: React.FC = () => {
+const ToolScreen = () => {
   const { userProfile } = useAuth();
   const [showLinkModal, setShowLinkModal] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<'PhonePe' | 'Google Pay' | 'Paytm'>('PhonePe');
+  const [selectedProvider, setSelectedProvider] = useState('PhonePe');
   const [upiIdInput, setUpiIdInput] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [operateLoading, setOperateLoading] = useState(false);
@@ -29,7 +28,7 @@ const ToolScreen: React.FC = () => {
         if (!userProfile) return;
         
         try {
-            const newAccount: LinkedAccount = {
+            const newAccount = {
                 provider: selectedProvider,
                 upiId: upiIdInput,
                 status: 'VERIFIED',
@@ -162,7 +161,7 @@ const ToolScreen: React.FC = () => {
                             {['PhonePe', 'Google Pay', 'Paytm'].map((p) => (
                                 <button 
                                     key={p}
-                                    onClick={() => setSelectedProvider(p as any)}
+                                    onClick={() => setSelectedProvider(p)}
                                     className={`py-2 px-1 rounded-lg border text-xs font-medium transition-all ${selectedProvider === p ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600'}`}
                                 >
                                     {p}

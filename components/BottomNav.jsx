@@ -1,16 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-interface BottomNavProps {
-  currentTab: string;
-}
-
-const BottomNav: React.FC<BottomNavProps> = ({ currentTab }) => {
+const BottomNav = ({ currentTab }) => {
   const navigate = useNavigate();
   const activeColor = "text-primary";
   const inactiveColor = "text-gray-400";
 
-  const handleTabChange = (tab: string) => {
+  const handleTabChange = (tab) => {
     navigate(`/${tab}`);
   };
 

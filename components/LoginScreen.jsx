@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { auth_signIn, auth_signUp } from '../firebase';
 
-const LoginScreen: React.FC = () => {
+const LoginScreen = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -9,7 +9,7 @@ const LoginScreen: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleAuth = async (e: React.FormEvent) => {
+  const handleAuth = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -19,7 +19,7 @@ const LoginScreen: React.FC = () => {
       } else {
         await auth_signUp(email, password, inviteCode);
       }
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Authentication failed');
     }
     setLoading(false);

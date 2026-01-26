@@ -1,16 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth_onStateChanged, db_subscribeUserProfile, db_ensureProfile, db_subscribeSystemSettings, auth_signOut } from '../firebase';
-import { UserProfile, SystemSettings } from '../types';
+import { auth_onStateChanged, db_subscribeUserProfile, db_ensureProfile, db_subscribeSystemSettings, auth_signOut } from '../firebase.js';
 
-interface AuthContextType {
-  currentUser: any | null;
-  userProfile: UserProfile | null;
-  systemSettings: SystemSettings | null;
-  loading: boolean;
-  isAdmin: boolean;
-}
-
-const AuthContext = createContext<AuthContextType>({
+const AuthContext = createContext({
   currentUser: null,
   userProfile: null,
   systemSettings: null,
@@ -20,10 +11,10 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
+export const AuthProvider= ({ children }) => {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [systemSettings, setSystemSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 

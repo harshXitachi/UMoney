@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
-const InviteLink: React.FC = () => {
+const InviteLink = () => {
   const { userProfile } = useAuth();
   const [copied, setCopied] = useState(false);
 

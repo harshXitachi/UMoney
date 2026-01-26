@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { auth_signOut, db_getTransactions, auth_updateUserPassword } from '../firebase';
-import { Transaction } from '../types';
+import { auth_signOut, db_getTransactions, auth_updateUserPassword } from '../firebase.js';
 
-type ViewType = 'MAIN' | 'QUOTA_HISTORY' | 'DEPOSIT_HISTORY' | 'WITHDRAW_HISTORY' | 'SUPPORT' | 'CHANGE_PASSWORD' | 'VERSION';
-
-const AssetsScreen: React.FC = () => {
+const AssetsScreen = () => {
   const { userProfile } = useAuth();
-  const [currentView, setCurrentView] = useState<ViewType>('MAIN');
+  const [currentView, setCurrentView] = useState('MAIN');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   
   // State for Lists
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState([]);
   const [listLoading, setListLoading] = useState(false);
 
   // State for Change Password
@@ -20,7 +17,7 @@ const AssetsScreen: React.FC = () => {
   const [passLoading, setPassLoading] = useState(false);
 
   // --- Fetch Logic for Histories ---
-  const fetchHistory = async (type: string) => {
+  const fetchHistory = async (type) => {
     if (!userProfile) return;
     setListLoading(true);
     try {
@@ -32,7 +29,7 @@ const AssetsScreen: React.FC = () => {
     setListLoading(false);
   };
 
-  const handleNavigate = (view: ViewType) => {
+  const handleNavigate = (view) => {
       setCurrentView(view);
       // Pre-fetch data if needed
       if (view === 'QUOTA_HISTORY') fetchHistory('DEPOSIT_INR');
@@ -42,7 +39,7 @@ const AssetsScreen: React.FC = () => {
 
   // --- Render Components ---
 
-  const renderHeader = (title: string) => (
+  const renderHeader = (title) => (
       <div className="flex items-center mb-6 px-4 pt-12">
          <button onClick={() => setCurrentView('MAIN')} className="mr-3 p-1 rounded-full hover:bg-gray-200 transition-colors">
              <span className="material-icons-round text-gray-700">arrow_back</span>
@@ -51,7 +48,7 @@ const AssetsScreen: React.FC = () => {
      </div>
   );
 
-  const renderTransactionList = (items: Transaction[], emptyMsg: string) => (
+  const renderTransactionList = (items, emptyMsg) => (
       <div className="bg-white rounded-xl shadow-sm overflow-hidden mx-4">
           {listLoading ? (
               <div className="p-8 flex justify-center">
@@ -111,7 +108,7 @@ const AssetsScreen: React.FC = () => {
               await auth_updateUserPassword(passForm.new);
               setPassMsg('Password updated successfully!');
               setPassForm({ new: '', confirm: '' });
-          } catch(e:any) {
+          } catch(e) {
               setPassMsg(e.message || 'Error updating password. Please re-login and try again.');
           }
           setPassLoading(false);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import LoginScreen from './components/LoginScreen';
+import LoginScreen from './components/LoginScreen.jsx';
 import BottomNav from './components/BottomNav';
 import TeamScreen from './components/TeamScreen';
 import Home from './components/Home';
@@ -10,10 +10,9 @@ import ToolScreen from './components/ToolScreen';
 import AssetsScreen from './components/AssetsScreen';
 import AdminPanel from './components/AdminPanel';
 import WithdrawScreen from './components/WithdrawScreen';
-import { db_getTeamData } from './firebase';
-import { DashboardStats, TeamMember } from './types';
+import { db_getTeamData } from './firebase.js';
 
-const AppContent: React.FC = () => {
+const AppContent = () => {
   const { currentUser, userProfile, loading, isAdmin, systemSettings } = useAuth();
   const location = useLocation();
   const [currentTab, setCurrentTab] = useState('home');
@@ -23,7 +22,7 @@ const AppContent: React.FC = () => {
     setCurrentTab(path);
   }, [location]);
 
-  const [stats, setStats] = useState<DashboardStats>({
+  const [stats, setStats] = useState({
     todayDeposit: 0,
     totalDeposit: 0,
     totalCommission: 0,
@@ -33,7 +32,7 @@ const AppContent: React.FC = () => {
     todayNewTeam: 0
   });
 
-  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [members, setMembers] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,7 +73,7 @@ const AppContent: React.FC = () => {
       );
   }
   
-  const MainLayout: React.FC<{children: React.ReactNode}> = ({ children }) => (
+  const MainLayout = ({ children }) => (
     <>
       {children}
       <BottomNav currentTab={currentTab} />
@@ -100,7 +99,7 @@ const AppContent: React.FC = () => {
   );
 };
 
-const App: React.FC = () => {
+const App = () => {
     return (
       <Router>
         <AuthProvider>

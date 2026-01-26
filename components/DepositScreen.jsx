@@ -1,22 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { db_addTransaction } from '../firebase';
-import { Transaction } from '../types';
+import { db_addTransaction } from '../firebase.js';
 
-const DepositScreen: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'INR' | 'USDT'>('INR');
+const DepositScreen = () => {
+  const [activeTab, setActiveTab] = useState('INR');
   const { userProfile, systemSettings } = useAuth();
   
   // --- INR Flow State ---
-  const [inrStep, setInrStep] = useState<'SELECT' | 'PAYMENT'>('SELECT');
-  const [selectedInrOption, setSelectedInrOption] = useState<any>(null);
+  const [inrStep, setInrStep] = useState('SELECT');
+  const [selectedInrOption, setSelectedInrOption] = useState(null);
   const [inrUtr, setInrUtr] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [timer, setTimer] = useState(300); // 5 minutes
 
   // --- USDT Flow State ---
-  const [usdtAmount, setUsdtAmount] = useState<string>('');
-  const [depositStep, setDepositStep] = useState<'INPUT' | 'PAYMENT'>('INPUT');
+  const [usdtAmount, setUsdtAmount] = useState('');
+  const [depositStep, setDepositStep] = useState('INPUT');
   const [txId, setTxId] = useState('');
   
   const [loading, setLoading] = useState(false);
@@ -30,14 +29,14 @@ const DepositScreen: React.FC = () => {
   const ADMIN_QR_BASE = systemSettings?.adminQrCode || "https://api.qrserver.com/v1/create-qr-code/?size=200x200";
 
   useEffect(() => {
-    let interval: any;
+    let interval;
     if (inrStep === 'PAYMENT' && timer > 0) {
       interval = setInterval(() => setTimer((t) => t - 1), 1000);
     }
     return () => clearInterval(interval);
   }, [inrStep, timer]);
 
-  const formatTime = (seconds: number) => {
+  const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s < 10 ? '0' : ''}${s}`;
@@ -54,7 +53,7 @@ const DepositScreen: React.FC = () => {
 
   // --- INR HANDLERS ---
 
-  const handleBuyInr = async (option: any) => {
+  const handleBuyInr = async (option) => {
     if (!userProfile) return;
     
     // 1. Check if Tool is Linked
@@ -85,8 +84,8 @@ const DepositScreen: React.FC = () => {
 
       setLoading(true);
       try {
-        const newTx: Omit<Transaction, 'id'> = {
-            userId: userProfile!.uid,
+        const newTx = {
+            userId: userProfile.uid,
             type: 'DEPOSIT_INR',
             amount: selectedInrOption.amount,
             status: 'PENDING',
@@ -133,8 +132,8 @@ const DepositScreen: React.FC = () => {
     try {
         const amount = parseFloat(usdtAmount);
         const inrValue = amount * 99.0;
-        const newTx: Omit<Transaction, 'id'> = {
-            userId: userProfile!.uid,
+        const newTx = {
+            userId: userProfile.uid,
             type: 'DEPOSIT_USDT',
             amount: amount,
             amountInr: inrValue,
@@ -156,7 +155,7 @@ const DepositScreen: React.FC = () => {
     setLoading(false);
   };
 
-  const copyText = (text: string) => {
+  const copyText = (text) => {
     navigator.clipboard.writeText(text);
     alert('Copied to clipboard!');
   };

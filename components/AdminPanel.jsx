@@ -1,24 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { db_getAllUsers, db_getAllTransactions, db_adminProcessTransaction, db_banUser, db_unbanUser, db_updateSystemSettings, auth_signOut } from '../firebase';
-import { UserProfile, Transaction, SystemSettings } from '../types';
+import { db_getAllUsers, db_getAllTransactions, db_adminProcessTransaction, db_banUser, db_unbanUser, db_updateSystemSettings, auth_signOut } from '../firebase.js';
 import { useAuth } from '../contexts/AuthContext';
 
-type AdminTab = 'DASHBOARD' | 'DEPOSITS' | 'WITHDRAWALS' | 'USERS' | 'SETTINGS';
-
-const AdminPanel: React.FC = () => {
+const AdminPanel = () => {
   const { systemSettings } = useAuth();
-  const [activeTab, setActiveTab] = useState<AdminTab>('DASHBOARD');
+  const [activeTab, setActiveTab] = useState('DASHBOARD');
   
   // Data State
-  const [users, setUsers] = useState<UserProfile[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [users, setUsers] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // Stats
   const [stats, setStats] = useState({ totalUsers: 0, pendingDep: 0, pendingWd: 0, totalDep: 0 });
 
   // Settings State
-  const [settingsForm, setSettingsForm] = useState<SystemSettings>({
+  const [settingsForm, setSettingsForm] = useState({
       usdtRate: 0, maintenanceMode: false, adminUpi: '', adminQrCode: '', inrPaymentEnabled: true, usdtPaymentEnabled: true
   });
 
@@ -45,13 +42,13 @@ const AdminPanel: React.FC = () => {
     setLoading(false);
   };
 
-  const handleProcessTx = async (id: string, action: 'APPROVE' | 'REJECT') => {
+  const handleProcessTx = async (id, action) => {
       if(!confirm(`Are you sure you want to ${action} this transaction?`)) return;
       await db_adminProcessTransaction(id, action);
       fetchData(); // Refresh
   };
 
-  const handleBan = async (uid: string, days: number) => {
+  const handleBan = async (uid, days) => {
       const seconds = days === -1 ? -1 : days * 24 * 60 * 60;
       await db_banUser(uid, seconds);
       fetchData();
@@ -85,7 +82,7 @@ const AdminPanel: React.FC = () => {
       </div>
   );
 
-  const renderTxTable = (type: 'DEPOSIT' | 'WITHDRAW') => {
+  const renderTxTable = (type) => {
       const filtered = transactions.filter(t => type === 'DEPOSIT' ? t.type.includes('DEPOSIT') : t.type === 'WITHDRAW');
       return (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -253,7 +250,7 @@ const AdminPanel: React.FC = () => {
                 ].map((item) => (
                     <button 
                         key={item.id}
-                        onClick={() => setActiveTab(item.id as AdminTab)}
+                        onClick={() => setActiveTab(item.id)}
                         className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${activeTab === item.id ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
                     >
                         <span className="material-icons-round">{item.icon}</span>
@@ -279,7 +276,7 @@ const AdminPanel: React.FC = () => {
             {/* Mobile Tabs */}
             <div className="md:hidden flex overflow-x-auto bg-slate-900 text-white p-2 gap-2">
                  {['DASHBOARD', 'DEPOSITS', 'WITHDRAWALS', 'USERS', 'SETTINGS'].map(tab => (
-                     <button key={tab} onClick={() => setActiveTab(tab as any)} className={`px-3 py-1 rounded text-xs ${activeTab === tab ? 'bg-blue-600' : 'bg-slate-800'}`}>
+                     <button key={tab} onClick={() => setActiveTab(tab)} className={`px-3 py-1 rounded text-xs ${activeTab === tab ? 'bg-blue-600' : 'bg-slate-800'}`}>
                          {tab}
                      </button>
                  ))}

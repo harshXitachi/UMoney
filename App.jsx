@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate, Outlet } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 import LoginScreen from './components/LoginScreen.jsx';
-import BottomNav from './components/BottomNav';
-import TeamScreen from './components/TeamScreen';
-import Home from './components/Home';
-import DepositScreen from './components/DepositScreen';
-import ToolScreen from './components/ToolScreen';
-import AssetsScreen from './components/AssetsScreen';
-import AdminPanel from './components/AdminPanel';
-import WithdrawScreen from './components/WithdrawScreen';
+import BottomNav from './components/BottomNav.jsx';
+import TeamScreen from './components/TeamScreen.jsx';
+import Home from './components/Home.jsx';
+import DepositScreen from './components/DepositScreen.jsx';
+import ToolScreen from './components/ToolScreen.jsx';
+import AssetsScreen from './components/AssetsScreen.jsx';
+import AdminPanel from './components/AdminPanel.jsx';
+import WithdrawScreen from './components/WithdrawScreen.jsx';
 import { db_getTeamData } from './firebase.js';
 
 const AppContent = () => {
@@ -73,9 +73,9 @@ const AppContent = () => {
       );
   }
   
-  const MainLayout = ({ children }) => (
+  const MainLayout = () => (
     <>
-      {children}
+      <Outlet />
       <BottomNav currentTab={currentTab} />
     </>
   );
@@ -83,18 +83,14 @@ const AppContent = () => {
   return (
       <Routes>
         <Route path="/withdraw" element={<WithdrawScreen />} />
-        <Route path="/*" element={
-          <MainLayout>
-            <Routes>
-              <Route path="/home" element={<Home />} />
-              <Route path="/deposit" element={<DepositScreen />} />
-              <Route path="/tool" element={<ToolScreen />} />
-              <Route path="/teams" element={<TeamScreen stats={stats} members={members} />} />
-              <Route path="/assets" element={<AssetsScreen />} />
-              <Route path="/" element={<Navigate to="/home" />} />
-            </Routes>
-          </MainLayout>
-        } />
+        <Route element={<MainLayout />}>
+            <Route path="/home" element={<Home />} />
+            <Route path="/deposit" element={<DepositScreen />} />
+            <Route path="/tool" element={<ToolScreen />} />
+            <Route path="/teams" element={<TeamScreen stats={stats} members={members} />} />
+            <Route path="/assets" element={<AssetsScreen />} />
+            <Route path="/" element={<Navigate to="/home" />} />
+        </Route>
       </Routes>
   );
 };

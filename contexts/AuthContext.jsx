@@ -27,48 +27,50 @@ export const AuthProvider= ({ children }) => {
   }, []);
 
   useEffect(() => {
-    // Subscribe to Auth Changes
-    const unsubscribe = auth_onStateChanged(async (user) => {
-      setCurrentUser(user);
-      
-      if (user) {
-        // Admin Check
-        if (user.email === 'admin@gmail.com') {
-            setIsAdmin(true);
-            setUserProfile(null); // Admin doesn't need user profile
-            setLoading(false);
-            return;
-        } else {
-            setIsAdmin(false);
-        }
+    let profileUnsubscribe = () => {};
 
-        // Ensure profile exists 
-        await db_ensureProfile(user.uid, user.email || '');
-        
-        // Subscribe to Profile
-        const unsubProfile = db_subscribeUserProfile(user.uid, (profile) => {
-            // Ban Check
-            if (profile?.isBanned && profile.banExpires) {
-                if (Date.now() < profile.banExpires) {
-                    alert("Your account has been banned by the administrator.");
-                    auth_signOut();
-                    return;
-                }
-            }
-            setUserProfile(profile);
+    const authUnsubscribe = auth_onStateChanged(async (user) => {
+      // Clean up previous profile subscription
+      profileUnsubscribe();
+
+      if (user) {
+        setCurrentUser(user);
+
+        if (user.email === 'admin@gmail.com') {
+          setIsAdmin(true);
+          setUserProfile(null);
+          setLoading(false);
+        } else {
+          setIsAdmin(false);
+          try {
+            await db_ensureProfile(user.uid, user.email || '');
+            profileUnsubscribe = db_subscribeUserProfile(user.uid, (profile) => {
+              if (profile?.isBanned && profile.banExpires && Date.now() < profile.banExpires) {
+                alert("Your account has been banned by the administrator.");
+                auth_signOut();
+                return;
+              }
+              setUserProfile(profile);
+              setLoading(false);
+            });
+          } catch (error) {
+            console.error("Error ensuring profile or subscribing:", error);
+            setUserProfile(null);
             setLoading(false);
-        });
-        
-        return () => unsubProfile();
+          }
+        }
       } else {
+        setCurrentUser(null);
         setUserProfile(null);
         setIsAdmin(false);
         setLoading(false);
       }
     });
 
+    // Cleanup function for the effect
     return () => {
-        if(typeof unsubscribe === 'function') unsubscribe();
+      authUnsubscribe();
+      profileUnsubscribe();
     };
   }, []);
 

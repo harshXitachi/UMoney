@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db_updateUserProfile } from '../firebase';
 
@@ -65,8 +65,7 @@ const ToolScreen = () => {
     }
 
     if (!userProfile) {
-        navigate('/login');
-        return null;
+        return <Navigate to="/login" replace />;
     }
 
     return (

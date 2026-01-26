@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginScreen from './components/LoginScreen';
 import BottomNav from './components/BottomNav';
@@ -8,13 +9,20 @@ import DepositScreen from './components/DepositScreen';
 import ToolScreen from './components/ToolScreen';
 import AssetsScreen from './components/AssetsScreen';
 import AdminPanel from './components/AdminPanel';
+import WithdrawScreen from './components/WithdrawScreen';
 import { db_getTeamData } from './firebase';
 import { DashboardStats, TeamMember } from './types';
 
 const AppContent: React.FC = () => {
   const { currentUser, userProfile, loading, isAdmin, systemSettings } = useAuth();
+  const location = useLocation();
   const [currentTab, setCurrentTab] = useState('home');
-  
+
+  useEffect(() => {
+    const path = location.pathname.replace('/', '') || 'home';
+    setCurrentTab(path);
+  }, [location]);
+
   const [stats, setStats] = useState<DashboardStats>({
     todayDeposit: 0,
     totalDeposit: 0,
@@ -28,7 +36,6 @@ const AppContent: React.FC = () => {
   const [members, setMembers] = useState<TeamMember[]>([]);
 
   useEffect(() => {
-    // Fetch Team Data when tab changes to teams or user loads
     const fetchData = async () => {
         if (!currentUser || isAdmin) return;
         try {
@@ -41,9 +48,9 @@ const AppContent: React.FC = () => {
     };
 
     if (currentUser && !isAdmin) {
-        fetchData(); // Fetch on mount
+        fetchData();
     }
-  }, [currentUser, currentTab, isAdmin]);
+  }, [currentUser, isAdmin]);
 
   if (loading) {
     return <div className="flex h-screen items-center justify-center bg-[#f3f4f8]">Loading...</div>;
@@ -53,12 +60,10 @@ const AppContent: React.FC = () => {
     return <LoginScreen />;
   }
 
-  // Admin Route
   if (isAdmin) {
       return <AdminPanel />;
   }
 
-  // Maintenance Mode Check (Admin bypasses it)
   if (systemSettings?.maintenanceMode) {
       return (
           <div className="min-h-screen bg-brand-bg flex flex-col items-center justify-center p-6 text-center">
@@ -68,37 +73,40 @@ const AppContent: React.FC = () => {
           </div>
       );
   }
-
-  const renderContent = () => {
-    switch(currentTab) {
-      case 'home':
-        return <Home />;
-      case 'deposit':
-        return <DepositScreen />;
-      case 'tool':
-        return <ToolScreen />;
-      case 'teams':
-        return <TeamScreen stats={stats} members={members} />;
-      case 'assets':
-        return <AssetsScreen />;
-      default:
-        return null;
-    }
-  };
+  
+  const MainLayout: React.FC<{children: React.ReactNode}> = ({ children }) => (
+    <>
+      {children}
+      <BottomNav currentTab={currentTab} />
+    </>
+  );
 
   return (
-    <>
-      {renderContent()}
-      <BottomNav currentTab={currentTab} onTabChange={setCurrentTab} />
-    </>
+      <Routes>
+        <Route path="/withdraw" element={<WithdrawScreen />} />
+        <Route path="/*" element={
+          <MainLayout>
+            <Routes>
+              <Route path="/home" element={<Home />} />
+              <Route path="/deposit" element={<DepositScreen />} />
+              <Route path="/tool" element={<ToolScreen />} />
+              <Route path="/teams" element={<TeamScreen stats={stats} members={members} />} />
+              <Route path="/assets" element={<AssetsScreen />} />
+              <Route path="/" element={<Navigate to="/home" />} />
+            </Routes>
+          </MainLayout>
+        } />
+      </Routes>
   );
 };
 
 const App: React.FC = () => {
     return (
+      <Router>
         <AuthProvider>
             <AppContent />
         </AuthProvider>
+      </Router>
     );
 };
 

@@ -1,13 +1,18 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface BottomNavProps {
   currentTab: string;
-  onTabChange: (tab: string) => void;
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onTabChange }) => {
+const BottomNav: React.FC<BottomNavProps> = ({ currentTab }) => {
+  const navigate = useNavigate();
   const activeColor = "text-primary";
   const inactiveColor = "text-gray-400";
+
+  const handleTabChange = (tab: string) => {
+    navigate(`/${tab}`);
+  };
 
   return (
     <div className="fixed bottom-6 left-6 right-6 z-50">
@@ -16,7 +21,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onTabChange }) => {
           {/* Home */}
           <li className="flex-1">
             <button 
-              onClick={() => onTabChange('home')}
+              onClick={() => handleTabChange('home')}
               className="flex flex-col items-center justify-center w-full group focus:outline-none transition-transform active:scale-95"
             >
               <span className={`material-icons-round text-2xl mb-0.5 transition-colors ${currentTab === 'home' ? activeColor : inactiveColor}`}>home</span>
@@ -27,7 +32,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onTabChange }) => {
           {/* Deposit */}
           <li className="flex-1">
             <button 
-              onClick={() => onTabChange('deposit')}
+              onClick={() => handleTabChange('deposit')}
               className="flex flex-col items-center justify-center w-full group focus:outline-none transition-transform active:scale-95"
             >
               <span className={`material-icons-round text-2xl mb-0.5 transition-colors ${currentTab === 'deposit' ? activeColor : inactiveColor}`}>description</span>
@@ -38,7 +43,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onTabChange }) => {
           {/* Tool */}
           <li className="flex-1">
             <button 
-              onClick={() => onTabChange('tool')}
+              onClick={() => handleTabChange('tool')}
               className="flex flex-col items-center justify-center w-full group focus:outline-none transition-transform active:scale-95"
             >
               <div className={`w-6 h-6 rounded-full flex items-center justify-center mb-0.5 transition-colors ${currentTab === 'tool' ? 'bg-primary text-white' : 'bg-gray-300 text-white'}`}>
@@ -51,7 +56,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onTabChange }) => {
           {/* Teams */}
           <li className="flex-1">
             <button 
-              onClick={() => onTabChange('teams')}
+              onClick={() => handleTabChange('teams')}
               className="flex flex-col items-center justify-center w-full group focus:outline-none transition-transform active:scale-95"
             >
               <span className={`material-icons-round text-2xl mb-0.5 transition-colors ${currentTab === 'teams' ? activeColor : inactiveColor}`}>groups</span>
@@ -62,7 +67,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onTabChange }) => {
           {/* Assets */}
           <li className="flex-1">
             <button 
-              onClick={() => onTabChange('assets')}
+              onClick={() => handleTabChange('assets')}
               className="flex flex-col items-center justify-center w-full group focus:outline-none transition-transform active:scale-95"
             >
               <span className={`material-icons-round text-2xl mb-0.5 transition-colors ${currentTab === 'assets' ? activeColor : inactiveColor}`}>person</span>

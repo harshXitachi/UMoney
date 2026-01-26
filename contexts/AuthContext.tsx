@@ -65,9 +65,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
             }
             setUserProfile(profile);
+            setLoading(false);
         });
         
-        setLoading(false);
         return () => unsubProfile();
       } else {
         setUserProfile(null);

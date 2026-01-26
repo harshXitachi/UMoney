@@ -1,11 +1,6 @@
 import React from 'react';
-import { TeamMember } from '../types';
 
-interface TeamListProps {
-  members: TeamMember[];
-}
-
-const TeamList: React.FC<TeamListProps> = ({ members }) => {
+const TeamList = ({ members }) => {
   return (
     <div className="pt-4">
       <div className="flex justify-between items-center mb-2 px-1">

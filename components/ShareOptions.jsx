@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ShareOptions: React.FC = () => {
+const ShareOptions = () => {
   const shareItems = [
     { iconClass: 'fa-brands fa-facebook-f', label: 'Facebook', colorBg: 'bg-blue-100 dark:bg-blue-900/30', colorText: 'text-blue-600 dark:text-blue-400' },
     { iconClass: 'fa-brands fa-telegram', label: 'Telegram', colorBg: 'bg-sky-100 dark:bg-sky-900/30', colorText: 'text-sky-500 dark:text-sky-400' },

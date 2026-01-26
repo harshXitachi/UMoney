@@ -1,12 +1,7 @@
 import React from 'react';
 
-interface SummaryStatsProps {
-  todayDeposit: number;
-  totalDeposit: number;
-}
-
-const SummaryStats: React.FC<SummaryStatsProps> = ({ todayDeposit, totalDeposit }) => {
-  const formatCurrency = (amount: number) => `₹ ${amount.toFixed(2)}`;
+const SummaryStats = ({ todayDeposit, totalDeposit }) => {
+  const formatCurrency = (amount) => `₹ ${amount.toFixed(2)}`;
 
   return (
     <div className="grid grid-cols-2 gap-3">

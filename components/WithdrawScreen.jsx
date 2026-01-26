@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db_addTransaction } from '../firebase';
-import { Transaction } from '../types';
 
 const WithdrawScreen = () => {
     const { userProfile } = useAuth();
@@ -18,7 +17,7 @@ const WithdrawScreen = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!userProfile) {
             setError('You must be logged in to make a withdrawal.');
@@ -42,7 +41,7 @@ const WithdrawScreen = () => {
         setSuccess(false);
 
         try {
-            const newTx: Omit<Transaction, 'id'> = {
+            const newTx = {
                 userId: userProfile.uid,
                 type: 'WITHDRAWAL',
                 amount: parseFloat(amount),

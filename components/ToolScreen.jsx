@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { db_updateUserProfile } from '../firebase';
+import { db_updateUserProfile, db_ensureProfile } from '../firebase';
 
 // Helper to generate a random UPI ID
 const generateRandomUpiId = () => {
@@ -18,7 +18,7 @@ const generateRandomUpiId = () => {
 const ToolScreen = () => {
     const navigate = useNavigate();
     const { userProfile, loading: userLoading } = useAuth();
-    
+
     // State
     const [showLinkModal, setShowLinkModal] = useState(false);
     const [linking, setLinking] = useState(false);
@@ -52,11 +52,11 @@ const ToolScreen = () => {
             setLinking(false);
         }
     };
-    
+
     const handleToggleOperate = async () => {
         if (!linked) return;
-        await db_updateUserProfile(userProfile.uid, { 
-            'linkedAccount.operateEnabled': !linked.operateEnabled 
+        await db_updateUserProfile(userProfile.uid, {
+            'linkedAccount.operateEnabled': !linked.operateEnabled
         });
     };
 
@@ -64,8 +64,46 @@ const ToolScreen = () => {
         return <div className="p-4"><p>Loading...</p></div>;
     }
 
+    const [retrying, setRetrying] = useState(false);
+    const { currentUser } = useAuth();
+
+    const handleRetryProfile = async () => {
+        if (!currentUser) return;
+        setRetrying(true);
+        try {
+            await db_ensureProfile(currentUser.uid, currentUser.email || '');
+            window.location.reload(); // Reload to trigger context refresh
+        } catch (e) {
+            console.error("Failed to create profile", e);
+            let errorMsg = "Failed to recover profile.";
+            if (e.code === 'permission-denied' || e.message?.includes('permission')) {
+                errorMsg = "Permission denied. Please check Firestore security rules. See FIRESTORE_SETUP.md for instructions.";
+            } else if (e.message) {
+                errorMsg = `Error: ${e.message}`;
+            }
+            alert(errorMsg);
+        } finally {
+            setRetrying(false);
+        }
+    };
+
     if (!userProfile) {
-        return <Navigate to="/login" replace />;
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+                <span className="material-icons-round text-5xl text-gray-300 mb-4">account_circle</span>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">Profile Not Found</h3>
+                <p className="text-gray-500 mb-6 max-w-xs">
+                    We couldn't load your user profile. This might happen if your account setup was interrupted.
+                </p>
+                <button
+                    onClick={handleRetryProfile}
+                    disabled={retrying}
+                    className="bg-indigo-600 text-white px-6 py-2 rounded-full font-medium shadow-lg hover:bg-indigo-700 transition-all disabled:opacity-50"
+                >
+                    {retrying ? 'Creating Profile...' : 'Create Profile & Retry'}
+                </button>
+            </div>
+        );
     }
 
     return (
@@ -82,9 +120,8 @@ const ToolScreen = () => {
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
                                 <h2 className="text-lg font-semibold text-gray-800">Your Connected Tool</h2>
-                                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                                    linked.operateEnabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                }`}>
+                                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${linked.operateEnabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                    }`}>
                                     {linked.operateEnabled ? 'OPERATING' : 'STOPPED'}
                                 </span>
                             </div>
@@ -104,11 +141,10 @@ const ToolScreen = () => {
                             </div>
                             <button
                                 onClick={handleToggleOperate}
-                                className={`w-full py-3 mt-4 text-white font-semibold rounded-lg shadow-md transition-all duration-300 ${
-                                    linked.operateEnabled 
-                                        ? 'bg-red-500 hover:bg-red-600' 
-                                        : 'bg-green-500 hover:bg-green-600'
-                                }`}
+                                className={`w-full py-3 mt-4 text-white font-semibold rounded-lg shadow-md transition-all duration-300 ${linked.operateEnabled
+                                    ? 'bg-red-500 hover:bg-red-600'
+                                    : 'bg-green-500 hover:bg-green-600'
+                                    }`}
                             >
                                 {linked.operateEnabled ? 'Stop Operation' : 'Start Operation'}
                             </button>
@@ -153,30 +189,29 @@ const ToolScreen = () => {
                 <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
                     <div className="bg-white w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl slide-up">
                         <h2 className="text-lg font-bold text-gray-800 mb-4">Connect UPI Tool</h2>
-                        
+
                         <div className="space-y-4">
                             <div>
                                 <label className="text-xs font-semibold text-gray-500 mb-1 block">Select App</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {['PhonePe', 'Google Pay', 'Paytm'].map((p) => (
-                                        <button 
+                                        <button
                                             key={p}
                                             onClick={() => setSelectedProvider(p)}
-                                            className={`py-2 px-3 text-sm font-semibold rounded-md border-2 transition-all ${
-                                                selectedProvider === p 
-                                                ? 'bg-indigo-50 border-indigo-500 text-indigo-700' 
+                                            className={`py-2 px-3 text-sm font-semibold rounded-md border-2 transition-all ${selectedProvider === p
+                                                ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
                                                 : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-400'
-                                            }`}
+                                                }`}
                                         >
                                             {p}
                                         </button>
                                     ))}
                                 </div>
                             </div>
-                            
+
                             <div>
                                 <label className="text-xs font-semibold text-gray-500 mb-1 block">UPI ID (VPA)</label>
-                                <input 
+                                <input
                                     type="text"
                                     value={upiId}
                                     onChange={(e) => setUpiId(e.target.value)}
@@ -187,14 +222,14 @@ const ToolScreen = () => {
                             {error && (
                                 <p className="text-xs text-red-600 bg-red-50 p-2 rounded-md">{error}</p>
                             )}
-                            
+
                             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 text-xs text-yellow-800">
                                 <p><span className="font-bold">We will verify this UPI ID.</span> Ensure your {selectedProvider} app is installed and active on this device.</p>
                             </div>
                         </div>
 
                         <div className="mt-6 flex gap-3">
-                            <button 
+                            <button
                                 onClick={() => setShowLinkModal(false)}
                                 className="w-full py-2 px-4 text-sm font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
                                 disabled={linking}

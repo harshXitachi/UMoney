@@ -10,6 +10,7 @@ import ToolScreen from './components/ToolScreen.jsx';
 import AssetsScreen from './components/AssetsScreen.jsx';
 import AdminPanel from './components/AdminPanel.jsx';
 import WithdrawScreen from './components/WithdrawScreen.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { db_getTeamData } from './firebase.js';
 
 const MainLayout = () => {
@@ -84,11 +85,13 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <Router>
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
-  </Router>
+  <ErrorBoundary>
+    <Router>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </Router>
+  </ErrorBoundary>
 );
 
 export default App;

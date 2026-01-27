@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const Home = () => {
   const [showWithdraw, setShowWithdraw] = useState(false);
   const navigate = useNavigate();
+  const { systemSettings } = useAuth();
+
+  // Get USDT rate from admin settings, fallback to 99.0
+  const usdtRate = systemSettings?.usdtRate || 99.0;
 
   const handleWithdrawClick = () => {
     navigate('/withdraw');
+  };
+
+  const handleTopUp = () => {
+    // Navigate to deposit page and set USDT tab active
+    navigate('/deposit?tab=usdt');
   };
 
   return (
@@ -69,8 +79,11 @@ const Home = () => {
         <section className="bg-white rounded-xl p-4 shadow-card flex items-center justify-between relative overflow-hidden">
           <div className="z-10">
             <p className="text-gray-500 text-xs font-medium mb-1">USDT rate</p>
-            <p className="text-brand-blue font-bold text-lg mb-3">1 USDT = 102.0 INR</p>
-            <button className="bg-brand-blue text-white text-xs font-bold py-2 px-6 rounded-full hover:bg-opacity-90 transition shadow-lg">
+            <p className="text-brand-blue font-bold text-lg mb-3">1 USDT = {usdtRate.toFixed(1)} INR</p>
+            <button
+              onClick={handleTopUp}
+              className="bg-brand-blue text-white text-xs font-bold py-2 px-6 rounded-full hover:bg-opacity-90 transition shadow-lg"
+            >
               TOP UP
             </button>
           </div>
@@ -137,48 +150,43 @@ const Home = () => {
           </div>
         </section>
 
-        {/* Withdraw Card */}
-        {/* Main financial status card with deep blue gradient background */}
-        <section className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-5 shadow-lg text-white" style={{ background: 'linear-gradient(to right, #4facfe, #00f2fe)'}}>
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-medium text-sm opacity-90">Withdraw (closing)</h3>
-            {/* Toggle Switch */}
-            <div className="relative inline-block w-10 h-5 align-middle select-none transition duration-200 ease-in">
-              <input
-                type="checkbox"
-                name="toggle"
-                id="toggle"
-                className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-400"
-                checked={showWithdraw}
-                onChange={() => setShowWithdraw(!showWithdraw)}
-              />
-              <label
-                htmlFor="toggle"
-                className="toggle-label block overflow-hidden h-5 rounded-full bg-gray-400 cursor-pointer"
-              ></label>
-            </div>
+        {/* Withdraw Card - Enhanced UI matching user's design */}
+        <section className="rounded-2xl p-5 shadow-lg text-white overflow-hidden" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #6B8DD6 100%)' }}>
+          <div className="flex justify-between items-center">
+            <h3 className="font-semibold text-base">Withdraw {showWithdraw ? '(open)' : '(closing)'}</h3>
+            {/* Custom Toggle Switch */}
+            <button
+              onClick={() => setShowWithdraw(!showWithdraw)}
+              className={`relative w-12 h-6 rounded-full transition-all duration-300 ${showWithdraw ? 'bg-green-400' : 'bg-white/30'}`}
+            >
+              <span
+                className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ease-out ${showWithdraw ? 'left-6' : 'left-0.5'}`}
+              ></span>
+            </button>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+
+          {/* Animated Withdraw Button - Shows right below toggle when open */}
+          <div className={`overflow-hidden transition-all duration-300 ease-out ${showWithdraw ? 'max-h-20 opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+            <button
+              onClick={handleWithdrawClick}
+              className="w-full bg-white text-indigo-600 font-bold py-3 px-6 rounded-xl hover:bg-gray-100 transition-all shadow-lg flex items-center justify-center gap-2"
+            >
+              <span className="material-icons-round text-sm">account_balance_wallet</span>
+              <span>Withdraw Now</span>
+            </button>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-4 mt-4">
             <div className="border-r border-white/20">
-              <p className="text-xs text-blue-100 mb-1">In Transaction</p>
+              <p className="text-xs text-white/70 mb-1">In Transaction</p>
               <p className="text-xl font-bold tracking-wide">₹0.00</p>
             </div>
             <div className="pl-2">
-              <p className="text-xs text-blue-100 mb-1">Today's Withdraw</p>
+              <p className="text-xs text-white/70 mb-1">Today's Withdraw</p>
               <p className="text-xl font-bold tracking-wide">₹0.00</p>
             </div>
           </div>
-          {showWithdraw && (
-            <div className="mt-4 text-center">
-              <p className="text-white mb-2">Are you sure you want to withdraw?</p>
-              <button
-                onClick={handleWithdrawClick}
-                className="bg-white text-blue-600 font-bold py-2 px-6 rounded-full hover:bg-gray-200 transition"
-              >
-                Withdraw
-              </button>
-            </div>
-          )}
         </section>
 
         {/* Help Button */}

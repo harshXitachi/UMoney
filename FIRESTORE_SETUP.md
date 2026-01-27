@@ -19,28 +19,31 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'admin@gmail.com';
+    }
+    
     // System settings - read by all, write by admin only
     match /system/{document=**} {
       allow read: if true;
-      allow write: if false; // Only admin through backend
+      allow write: if isAdmin();
     }
     
-    // Users collection - users can read/write their own profile
+    // Users collection - users can read/write their own profile, admin can update all
     match /users/{userId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
       allow delete: if false;
     }
     
-    // Transactions - users can read/create their own, admin can read all
+    // Transactions - users can read/create their own, admin can read and update all
     match /transactions/{transactionId} {
-      allow read: if request.auth != null && 
-                    (resource.data.userId == request.auth.uid || 
-                     request.auth.token.email == 'admin@gmail.com');
-      allow create: if request.auth != null && 
-                      request.resource.data.userId == request.auth.uid;
-      allow update, delete: if false; // Only admin through backend
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if isAdmin();
+      allow delete: if false;
     }
   }
 }

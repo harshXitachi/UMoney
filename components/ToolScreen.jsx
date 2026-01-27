@@ -17,7 +17,7 @@ const generateRandomUpiId = () => {
 // Main Component
 const ToolScreen = () => {
     const navigate = useNavigate();
-    const { userProfile, loading: userLoading } = useAuth();
+    const { userProfile, loading: userLoading, currentUser } = useAuth();
 
     // State
     const [showLinkModal, setShowLinkModal] = useState(false);
@@ -25,6 +25,7 @@ const ToolScreen = () => {
     const [error, setError] = useState('');
     const [selectedProvider, setSelectedProvider] = useState('PhonePe');
     const [upiId, setUpiId] = useState('');
+    const [retrying, setRetrying] = useState(false);
 
     const linked = useMemo(() => userProfile?.linkedAccount, [userProfile]);
 
@@ -63,9 +64,6 @@ const ToolScreen = () => {
     if (userLoading) {
         return <div className="p-4"><p>Loading...</p></div>;
     }
-
-    const [retrying, setRetrying] = useState(false);
-    const { currentUser } = useAuth();
 
     const handleRetryProfile = async () => {
         if (!currentUser) return;

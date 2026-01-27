@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { auth_signOut, db_getTransactions, auth_updateUserPassword, db_ensureProfile } from '../firebase.js';
 
 const AssetsScreen = () => {
-    const { userProfile } = useAuth();
+    const { userProfile, currentUser } = useAuth();
     const [currentView, setCurrentView] = useState('MAIN');
     const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -16,21 +16,33 @@ const AssetsScreen = () => {
     const [passMsg, setPassMsg] = useState('');
     const [passLoading, setPassLoading] = useState(false);
 
+    // State for Profile Recovery
+    const [retrying, setRetrying] = useState(false);
+    const [fetchError, setFetchError] = useState('');
+
     // --- Fetch Logic for Histories ---
     const fetchHistory = async (type) => {
         if (!userProfile) return;
         setListLoading(true);
+        setFetchError('');
         try {
             const data = await db_getTransactions(userProfile.uid, type);
             setTransactions(data);
         } catch (e) {
-            console.error(e);
+            console.error('History fetch error:', e);
+            if (e.message?.includes('index')) {
+                setFetchError('Database index required. Please check Firebase console.');
+            } else {
+                setFetchError('Failed to load history. Please try again.');
+            }
         }
         setListLoading(false);
     };
 
     const handleNavigate = (view) => {
         setCurrentView(view);
+        setTransactions([]); // Clear old data
+        setFetchError('');
         // Pre-fetch data if needed
         if (view === 'QUOTA_HISTORY') fetchHistory('DEPOSIT_INR');
         if (view === 'DEPOSIT_HISTORY') fetchHistory('DEPOSIT_USDT');
@@ -53,6 +65,11 @@ const AssetsScreen = () => {
             {listLoading ? (
                 <div className="p-8 flex justify-center">
                     <span className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
+                </div>
+            ) : fetchError ? (
+                <div className="p-8 text-center flex flex-col items-center text-red-400">
+                    <span className="material-icons-outlined text-4xl mb-2">error</span>
+                    <p className="text-sm text-red-500">{fetchError}</p>
                 </div>
             ) : items.length === 0 ? (
                 <div className="p-12 text-center flex flex-col items-center text-gray-400">
@@ -211,9 +228,6 @@ const AssetsScreen = () => {
     }
 
     // --- Profile Recovery UI ---
-    const { currentUser } = useAuth();
-    const [retrying, setRetrying] = useState(false);
-
     const handleRetryProfile = async () => {
         if (!currentUser) return;
         setRetrying(true);

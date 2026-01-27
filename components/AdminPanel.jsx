@@ -16,8 +16,10 @@ const AdminPanel = () => {
 
     // Settings State
     const [settingsForm, setSettingsForm] = useState({
-        usdtRate: 0, maintenanceMode: false, adminUpi: '', adminQrCode: '', usdtTrc20Address: '', usdtQrCode: '', inrPaymentEnabled: true, usdtPaymentEnabled: true
+        usdtRate: 0, maintenanceMode: false, adminUpi: '', adminQrCode: '', usdtTrc20Address: '', usdtQrCode: '', inrPaymentEnabled: true, usdtPaymentEnabled: true, adminEmail: '', adminPassword: ''
     });
+    const [newAdminPassword, setNewAdminPassword] = useState('');
+    const [confirmAdminPassword, setConfirmAdminPassword] = useState('');
 
     useEffect(() => {
         fetchData();
@@ -279,6 +281,67 @@ const AdminPanel = () => {
 
                 <div className="mt-6">
                     <button onClick={handleSaveSettings} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700">Save System Settings</button>
+                </div>
+            </div>
+
+            {/* Admin Account Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border-2 border-purple-200">
+                <div className="flex items-center gap-2 mb-4">
+                    <span className="material-icons-round text-purple-600">admin_panel_settings</span>
+                    <h3 className="text-lg font-bold text-purple-700">Admin Account</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                    Update admin login credentials. After changing, you will need to log in with new credentials.
+                </p>
+                <div className="space-y-4 bg-purple-50 p-4 rounded-lg">
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Admin Email</label>
+                        <input
+                            type="email"
+                            value={settingsForm.adminEmail}
+                            onChange={e => setSettingsForm({ ...settingsForm, adminEmail: e.target.value })}
+                            className="w-full border-gray-300 rounded-lg"
+                            placeholder="admin@example.com"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">New Password</label>
+                        <input
+                            type="password"
+                            value={newAdminPassword}
+                            onChange={e => setNewAdminPassword(e.target.value)}
+                            className="w-full border-gray-300 rounded-lg"
+                            placeholder="Enter new password"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Confirm Password</label>
+                        <input
+                            type="password"
+                            value={confirmAdminPassword}
+                            onChange={e => setConfirmAdminPassword(e.target.value)}
+                            className="w-full border-gray-300 rounded-lg"
+                            placeholder="Confirm new password"
+                        />
+                    </div>
+                    <button
+                        onClick={async () => {
+                            if (newAdminPassword && newAdminPassword !== confirmAdminPassword) {
+                                alert('Passwords do not match!');
+                                return;
+                            }
+                            const updates = { adminEmail: settingsForm.adminEmail };
+                            if (newAdminPassword) updates.adminPassword = newAdminPassword;
+                            await db_updateSystemSettings(updates);
+                            alert('Admin credentials updated! Please log out and log in with new credentials.');
+                            setNewAdminPassword('');
+                            setConfirmAdminPassword('');
+                        }}
+                        className="w-full bg-purple-600 text-white font-bold py-3 rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2"
+                    >
+                        <span className="material-icons-round text-sm">save</span>
+                        Update Admin Credentials
+                    </button>
                 </div>
             </div>
 

@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, sendPasswordResetEmail } from 'firebase/auth';
 import {
     getFirestore, collection, addDoc, doc, updateDoc, setDoc, getDoc,
     onSnapshot, query, where, orderBy, getDocs, serverTimestamp, Timestamp, limit
@@ -32,7 +32,10 @@ const DEFAULT_SETTINGS = {
     usdtQrCode: "",
     // Payment toggles
     inrPaymentEnabled: true,
-    usdtPaymentEnabled: true
+    usdtPaymentEnabled: true,
+    // Admin Credentials
+    adminEmail: "admin@gmail.com",
+    adminPassword: "admin"
 };
 
 export const db_getSystemSettings = async () => {
@@ -54,9 +57,13 @@ export const db_updateSystemSettings = async (settings) => {
 // --- AUTH SERVICES ---
 
 export const auth_signIn = async (email, password) => {
-    // Admin Bypass
-    if (email === 'admin@gmail.com' && password === 'admin') {
-        return { user: { uid: 'ADMIN_USER', email: 'admin@gmail.com' } };
+    // Check for Admin Login
+    const settings = await db_getSystemSettings();
+    const adminEmail = settings.adminEmail || 'admin@gmail.com';
+    const adminPassword = settings.adminPassword || 'admin';
+
+    if (email === adminEmail && password === adminPassword) {
+        return { user: { uid: 'ADMIN_USER', email: adminEmail } };
     }
 
     return signInWithEmailAndPassword(auth, email, password);
@@ -94,6 +101,11 @@ export const auth_onStateChanged = (callback) => {
 export const auth_updateUserPassword = async (newPassword) => {
     if (auth.currentUser) return updatePassword(auth.currentUser, newPassword);
     throw new Error("No authenticated user found");
+};
+
+// Send password reset email to user
+export const auth_sendPasswordReset = async (email) => {
+    return sendPasswordResetEmail(auth, email);
 };
 
 // --- DATABASE SERVICES ---

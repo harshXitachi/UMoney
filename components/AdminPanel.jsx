@@ -120,7 +120,10 @@ const AdminPanel = () => {
                                         </td>
                                         <td className="p-4 font-bold">
                                             {type === 'WITHDRAW' ? <span className="text-red-600">-</span> : <span className="text-green-600">+</span>}
-                                            {tx.amountInr ? `₹${tx.amountInr}` : `${tx.amount} ${tx.type.includes('USDT') ? 'USDT' : 'INR'}`}
+                                            {tx.type.includes('USDT')
+                                                ? <span>{tx.amount} USDT <span className="text-xs text-gray-400">(₹{tx.amountInr})</span></span>
+                                                : <span>₹{tx.amount} INR</span>
+                                            }
                                         </td>
                                         <td className="p-4 text-xs font-mono text-gray-500">
                                             {tx.type}<br />

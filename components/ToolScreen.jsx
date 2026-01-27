@@ -184,7 +184,7 @@ const ToolScreen = () => {
 
             {/* Link Modal */}
             {showLinkModal && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
                     <div className="bg-white w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl slide-up">
                         <h2 className="text-lg font-bold text-gray-800 mb-4">Connect UPI Tool</h2>
 

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>UMONEY Mobile App</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        // Existing colors
+                        primary: "#3448a3",
+                        secondary: "#263585",
+                        "background-light": "#fbf9fc",
+                        "background-dark": "#121212",
+                        "card-light": "#ffffff",
+                        "card-dark": "#1e1e1e",
+                        "accent-blue": "#3b82f6",
+                        "accent-green": "#22c55e",
+                        "accent-cyan": "#22d3ee",
+                        
+                        // New Brand colors from Home HTML
+                        brand: {
+                            bg: '#F5F6FA',
+                            blue: '#4338CA', // Dark blue used in header/buttons
+                            primary: '#5B4EFF', // Lighter blue for withdraw card
+                            secondary: '#FFA500', // Orange for notifications
+                            gold: '#FBBF24', // Gold for coins
+                            teal: '#0EA5E9', // Teal for timer
+                        },
+                        
+                        // New colors for Deposit Screen
+                        'app-blue': '#2b3f96',
+                        'app-bg': '#f3f4f8',
+                        'app-green': '#2e7d32',
+                        'badge-bg': '#e3f2fd',
+                        'badge-text': '#1e88e5',
+
+                        // New colors for Tool Screen
+                        'card-purple-start': '#5b2488',
+                        'card-purple-end': '#3b1263',
+                        'btn-orange': '#fca311',
+                        'fab-blue': '#2c43a3',
+                        'nav-text-gray': '#a0a0a0',
+                        'nav-active-green': '#28a745',
+
+                        // New colors for Assets Screen
+                        'assets-primary': '#31469e',
+                        'assets-primary-dark': '#26357a',
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                    },
+                    boxShadow: {
+                        'float': '0 4px 20px rgba(0, 0, 0, 0.08)',
+                        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                        'nav': '0 -2px 10px rgba(0, 0, 0, 0.05)',
+                    }
+                },
+            },
+        };
+    </script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Custom Toggle Switch Styles */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #68D391;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #68D391;
+        }
+        
+        body {
+            min-height: max(884px, 100dvh);
+        }
+        
+        /* Safe area for bottom nav on mobile */
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    </style>
+  <script type="module" crossorigin src="/assets/index-DkvQPrur.js"></script>
+</head>
+<body class="bg-brand-bg text-gray-800 font-sans antialiased min-h-screen relative pb-28">
+    <div id="root"></div>
+</body>
+</html>

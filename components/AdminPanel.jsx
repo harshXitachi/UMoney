@@ -21,9 +21,18 @@ const AdminPanel = () => {
     const [newAdminPassword, setNewAdminPassword] = useState('');
     const [confirmAdminPassword, setConfirmAdminPassword] = useState('');
 
+    // Quota Management State
+    const [quotas, setQuotas] = useState([]);
+    const [showQuotaModal, setShowQuotaModal] = useState(false);
+    const [editingQuota, setEditingQuota] = useState(null);
+    const [quotaForm, setQuotaForm] = useState({ amount: '', percent: 3.00, activity: 6.00 });
+
     useEffect(() => {
         fetchData();
-        if (systemSettings) setSettingsForm(systemSettings);
+        if (systemSettings) {
+            setSettingsForm(systemSettings);
+            setQuotas(systemSettings.inrQuotas || []);
+        }
     }, [systemSettings, activeTab]);
 
     const fetchData = async () => {
@@ -65,6 +74,62 @@ const AdminPanel = () => {
     const handleSaveSettings = async () => {
         await db_updateSystemSettings(settingsForm);
         alert("System Settings Updated!");
+    };
+
+    // --- QUOTA MANAGEMENT ---
+    const openAddQuotaModal = () => {
+        setEditingQuota(null);
+        setQuotaForm({ amount: '', percent: 3.00, activity: 6.00 });
+        setShowQuotaModal(true);
+    };
+
+    const openEditQuotaModal = (quota) => {
+        setEditingQuota(quota);
+        setQuotaForm({ amount: quota.amount, percent: quota.percent, activity: quota.activity });
+        setShowQuotaModal(true);
+    };
+
+    const handleSaveQuota = async () => {
+        if (!quotaForm.amount || quotaForm.amount <= 0) {
+            alert('Please enter a valid amount');
+            return;
+        }
+
+        let updatedQuotas;
+        if (editingQuota) {
+            // Edit existing
+            updatedQuotas = quotas.map(q =>
+                q.id === editingQuota.id
+                    ? { ...q, amount: parseFloat(quotaForm.amount), percent: parseFloat(quotaForm.percent), activity: parseFloat(quotaForm.activity) }
+                    : q
+            );
+        } else {
+            // Add new
+            const newQuota = {
+                id: 'q' + Date.now(),
+                amount: parseFloat(quotaForm.amount),
+                percent: parseFloat(quotaForm.percent),
+                activity: parseFloat(quotaForm.activity)
+            };
+            updatedQuotas = [...quotas, newQuota];
+        }
+
+        // Sort by amount
+        updatedQuotas.sort((a, b) => a.amount - b.amount);
+
+        await db_updateSystemSettings({ inrQuotas: updatedQuotas });
+        setQuotas(updatedQuotas);
+        setShowQuotaModal(false);
+        alert(editingQuota ? 'Quota updated!' : 'Quota added!');
+    };
+
+    const handleDeleteQuota = async (quotaId) => {
+        if (!confirm('Are you sure you want to delete this quota?')) return;
+
+        const updatedQuotas = quotas.filter(q => q.id !== quotaId);
+        await db_updateSystemSettings({ inrQuotas: updatedQuotas });
+        setQuotas(updatedQuotas);
+        alert('Quota deleted!');
     };
 
     // --- SUB COMPONENTS ---
@@ -202,6 +267,167 @@ const AdminPanel = () => {
                 </tbody>
             </table>
         </div>
+    );
+
+    const renderQuotas = () => (
+        <>
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="p-4 border-b flex justify-between items-center">
+                    <div>
+                        <h3 className="font-bold text-gray-800">INR Deposit Quotas</h3>
+                        <p className="text-xs text-gray-500">Manage deposit packages visible to users</p>
+                    </div>
+                    <button
+                        onClick={openAddQuotaModal}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 flex items-center gap-1"
+                    >
+                        <span className="material-icons-round text-sm">add</span>
+                        Add Quota
+                    </button>
+                </div>
+                <table className="w-full text-sm text-left">
+                    <thead className="bg-gray-50 text-gray-600 font-bold border-b">
+                        <tr>
+                            <th className="p-4">Amount (INR)</th>
+                            <th className="p-4">Income %</th>
+                            <th className="p-4">Activity Bonus</th>
+                            <th className="p-4">Calculated Income</th>
+                            <th className="p-4">Total Quota</th>
+                            <th className="p-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                        {quotas.map(q => {
+                            const income = (q.amount * q.percent / 100);
+                            const totalQuota = q.amount + income + q.activity;
+                            return (
+                                <tr key={q.id} className="hover:bg-gray-50">
+                                    <td className="p-4">
+                                        <span className="font-bold text-gray-800">₹{q.amount.toFixed(2)}</span>
+                                    </td>
+                                    <td className="p-4">
+                                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">{q.percent}%</span>
+                                    </td>
+                                    <td className="p-4 text-gray-600">₹{q.activity.toFixed(2)}</td>
+                                    <td className="p-4 text-green-600 font-medium">₹{income.toFixed(2)}</td>
+                                    <td className="p-4">
+                                        <span className="font-bold text-blue-600">₹{totalQuota.toFixed(2)}</span>
+                                    </td>
+                                    <td className="p-4 text-right space-x-2">
+                                        <button
+                                            onClick={() => openEditQuotaModal(q)}
+                                            className="bg-blue-100 text-blue-600 px-3 py-1 rounded text-xs font-bold hover:bg-blue-200"
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            onClick={() => handleDeleteQuota(q.id)}
+                                            className="bg-red-100 text-red-600 px-3 py-1 rounded text-xs font-bold hover:bg-red-200"
+                                        >
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                        {quotas.length === 0 && (
+                            <tr>
+                                <td colSpan="6" className="p-8 text-center text-gray-400">
+                                    No quotas configured. Click "Add Quota" to create one.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Quota Modal */}
+            {showQuotaModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-lg font-bold text-gray-800">
+                                {editingQuota ? 'Edit Quota' : 'Add New Quota'}
+                            </h3>
+                            <button onClick={() => setShowQuotaModal(false)} className="text-gray-400 hover:text-gray-600">
+                                <span className="material-icons-round">close</span>
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Amount (INR)</label>
+                                <input
+                                    type="number"
+                                    value={quotaForm.amount}
+                                    onChange={e => setQuotaForm({ ...quotaForm, amount: e.target.value })}
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="e.g., 500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Income Percentage (%)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={quotaForm.percent}
+                                    onChange={e => setQuotaForm({ ...quotaForm, percent: e.target.value })}
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="e.g., 3.00"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Activity Bonus (INR)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={quotaForm.activity}
+                                    onChange={e => setQuotaForm({ ...quotaForm, activity: e.target.value })}
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="e.g., 6.00"
+                                />
+                            </div>
+
+                            {/* Preview */}
+                            <div className="bg-blue-50 rounded-lg p-4">
+                                <p className="text-xs text-gray-500 mb-2">Preview</p>
+                                <div className="flex justify-between text-sm">
+                                    <span>Income:</span>
+                                    <span className="font-bold text-green-600">
+                                        ₹{((parseFloat(quotaForm.amount) || 0) * (parseFloat(quotaForm.percent) || 0) / 100).toFixed(2)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between text-sm mt-1">
+                                    <span>Total Quota:</span>
+                                    <span className="font-bold text-blue-600">
+                                        ₹{(
+                                            (parseFloat(quotaForm.amount) || 0) +
+                                            ((parseFloat(quotaForm.amount) || 0) * (parseFloat(quotaForm.percent) || 0) / 100) +
+                                            (parseFloat(quotaForm.activity) || 0)
+                                        ).toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={() => setShowQuotaModal(false)}
+                                className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg font-bold hover:bg-gray-200"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSaveQuota}
+                                className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700"
+                            >
+                                {editingQuota ? 'Save Changes' : 'Add Quota'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 
     const handleClearData = async () => {
@@ -383,6 +609,7 @@ const AdminPanel = () => {
                         { id: 'DEPOSITS', icon: 'payments', label: 'Deposits (INR)' },
                         { id: 'WITHDRAWALS', icon: 'account_balance_wallet', label: 'Withdrawals' },
                         { id: 'USERS', icon: 'people', label: 'User Management' },
+                        { id: 'QUOTAS', icon: 'price_change', label: 'INR Quotas' },
                         { id: 'SETTINGS', icon: 'settings', label: 'System Settings' },
                     ].map((item) => (
                         <button
@@ -412,7 +639,7 @@ const AdminPanel = () => {
 
                 {/* Mobile Tabs */}
                 <div className="md:hidden flex overflow-x-auto bg-slate-900 text-white p-2 gap-2">
-                    {['DASHBOARD', 'DEPOSITS', 'WITHDRAWALS', 'USERS', 'SETTINGS'].map(tab => (
+                    {['DASHBOARD', 'DEPOSITS', 'WITHDRAWALS', 'USERS', 'QUOTAS', 'SETTINGS'].map(tab => (
                         <button key={tab} onClick={() => setActiveTab(tab)} className={`px-3 py-1 rounded text-xs ${activeTab === tab ? 'bg-blue-600' : 'bg-slate-800'}`}>
                             {tab}
                         </button>
@@ -432,6 +659,7 @@ const AdminPanel = () => {
                     {activeTab === 'DEPOSITS' && renderTxTable('DEPOSIT')}
                     {activeTab === 'WITHDRAWALS' && renderTxTable('WITHDRAW')}
                     {activeTab === 'USERS' && renderUsers()}
+                    {activeTab === 'QUOTAS' && renderQuotas()}
                     {activeTab === 'SETTINGS' && renderSettings()}
                 </main>
             </div>

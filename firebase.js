@@ -35,7 +35,16 @@ const DEFAULT_SETTINGS = {
     usdtPaymentEnabled: true,
     // Admin Credentials
     adminEmail: "admin@gmail.com",
-    adminPassword: "admin"
+    adminPassword: "admin",
+    // INR Quotas (admin-managed)
+    inrQuotas: [
+        { id: 'q1', amount: 100, percent: 3.00, activity: 6.00 },
+        { id: 'q2', amount: 300, percent: 3.00, activity: 6.00 },
+        { id: 'q3', amount: 310, percent: 3.00, activity: 6.00 },
+        { id: 'q4', amount: 400, percent: 3.00, activity: 6.00 },
+        { id: 'q5', amount: 900, percent: 3.00, activity: 6.00 },
+        { id: 'q6', amount: 1300, percent: 3.00, activity: 6.00 },
+    ]
 };
 
 export const db_getSystemSettings = async () => {

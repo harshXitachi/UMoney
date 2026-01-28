@@ -47,14 +47,15 @@ const DepositScreen = () => {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  const depositOptions = [
-    { amount: 100, income: 3.00, percent: 3.00, activity: 6.00, quota: 109.00 },
-    { amount: 300, income: 9.00, percent: 3.00, activity: 6.00, quota: 315.00 },
-    { amount: 310, income: 9.30, percent: 3.00, activity: 6.00, quota: 325.30 },
-    { amount: 400, income: 12.00, percent: 3.00, activity: 6.00, quota: 418.00 },
-    { amount: 900, income: 27.00, percent: 3.00, activity: 6.00, quota: 933.00 },
-    { amount: 1300, income: 39.00, percent: 3.00, activity: 6.00, quota: 1345.00 },
-  ];
+  // Dynamic deposit options from admin settings
+  const depositOptions = (systemSettings?.inrQuotas || []).map(q => ({
+    id: q.id,
+    amount: q.amount,
+    income: parseFloat((q.amount * q.percent / 100).toFixed(2)),
+    percent: q.percent,
+    activity: q.activity,
+    quota: parseFloat((q.amount + (q.amount * q.percent / 100) + q.activity).toFixed(2))
+  }));
 
   // --- INR HANDLERS ---
 

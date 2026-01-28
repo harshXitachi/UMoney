@@ -508,6 +508,22 @@ const AdminPanel = () => {
                     </div>
                 </div>
 
+                {/* Customer Support Section */}
+                <div className="border-t pt-6 mb-6">
+                    <div className="flex items-center gap-2 mb-4">
+                        <span className="material-icons-round text-orange-600">support_agent</span>
+                        <h4 className="text-md font-bold text-gray-800">Customer Support</h4>
+                        <span className="bg-orange-100 text-orange-700 text-xs font-bold px-2 py-0.5 rounded">Support Settings</span>
+                    </div>
+                    <div className="space-y-4 bg-orange-50 p-4 rounded-lg">
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Telegram Support Link</label>
+                            <input type="text" value={settingsForm.telegramSupportLink || ''} onChange={e => setSettingsForm({ ...settingsForm, telegramSupportLink: e.target.value })} className="w-full border-gray-300 rounded-lg" placeholder="https://t.me/your_support" />
+                            <p className="text-xs text-gray-500 mt-1">Link to your Telegram support channel or bot</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="mt-6">
                     <button onClick={handleSaveSettings} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700">Save System Settings</button>
                 </div>

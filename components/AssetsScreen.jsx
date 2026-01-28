@@ -1,11 +1,23 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { auth_signOut, db_getTransactions, auth_updateUserPassword, db_ensureProfile } from '../firebase.js';
 
 const AssetsScreen = () => {
-    const { userProfile, currentUser } = useAuth();
+    const { userProfile, currentUser, systemSettings } = useAuth();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [currentView, setCurrentView] = useState('MAIN');
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+    // Handle URL param for direct navigation to support
+    useEffect(() => {
+        const viewParam = searchParams.get('view');
+        if (viewParam === 'support') {
+            setCurrentView('SUPPORT');
+            // Clear the URL param after handling
+            setSearchParams({});
+        }
+    }, [searchParams, setSearchParams]);
 
     // State for Lists
     const [transactions, setTransactions] = useState([]);
@@ -190,12 +202,14 @@ const AssetsScreen = () => {
                                 <img src="https://cdn-icons-png.flaticon.com/512/4961/4961759.png" alt="Support" className="w-24 h-24 mx-auto mb-4 opacity-80" />
                                 <h3 className="text-lg font-bold text-gray-800 mb-2">How can we help?</h3>
                                 <p className="text-sm text-gray-500 mb-6">Our team is available 24/7 to assist you with any issues.</p>
-                                <button className="w-full bg-green-500 text-white font-bold py-3 rounded-lg shadow hover:bg-green-600 flex items-center justify-center gap-2 mb-3">
-                                    <i className="fab fa-whatsapp text-xl"></i> Chat on WhatsApp
-                                </button>
-                                <button className="w-full bg-blue-500 text-white font-bold py-3 rounded-lg shadow hover:bg-blue-600 flex items-center justify-center gap-2">
+                                <a
+                                    href={systemSettings?.telegramSupportLink || 'https://t.me/umoney_support'}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="w-full bg-blue-500 text-white font-bold py-3 rounded-lg shadow hover:bg-blue-600 flex items-center justify-center gap-2"
+                                >
                                     <i className="fab fa-telegram text-xl"></i> Chat on Telegram
-                                </button>
+                                </a>
                             </div>
                         </div>
                     </>

@@ -44,7 +44,9 @@ const DEFAULT_SETTINGS = {
         { id: 'q4', amount: 400, percent: 3.00, activity: 6.00 },
         { id: 'q5', amount: 900, percent: 3.00, activity: 6.00 },
         { id: 'q6', amount: 1300, percent: 3.00, activity: 6.00 },
-    ]
+    ],
+    // Support settings
+    telegramSupportLink: "https://t.me/umoney_support"
 };
 
 export const db_getSystemSettings = async () => {

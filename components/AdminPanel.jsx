@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 const AdminPanel = () => {
     const { systemSettings } = useAuth();
     const [activeTab, setActiveTab] = useState('DASHBOARD');
-
+    const [showMobileSidebar, setShowMobileSidebar] = useState(false);
     // Data State
     const [users, setUsers] = useState([]);
     const [transactions, setTransactions] = useState([]);
@@ -158,115 +158,264 @@ const AdminPanel = () => {
     const renderTxTable = (type) => {
         const filtered = transactions.filter(t => type === 'DEPOSIT' ? t.type.includes('DEPOSIT') : t.type === 'WITHDRAW');
         return (
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <>
+                {/* Desktop Table View */}
+                <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-gray-50 text-gray-600 font-bold border-b">
+                                <tr>
+                                    <th className="p-4">Date</th>
+                                    <th className="p-4">User</th>
+                                    <th className="p-4">Amount</th>
+                                    <th className="p-4">Method/UTR</th>
+                                    <th className="p-4">Status</th>
+                                    <th className="p-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {filtered.map(tx => {
+                                    const user = users.find(u => u.uid === tx.userId);
+                                    return (
+                                        <tr key={tx.id} className="hover:bg-gray-50">
+                                            <td className="p-4 text-gray-500 text-xs">
+                                                {tx.date?.seconds ? new Date(tx.date.seconds * 1000).toLocaleString() : 'Just now'}
+                                            </td>
+                                            <td className="p-4">
+                                                <div className="font-medium text-gray-900">{user?.email || tx.userId}</div>
+                                                <div className="text-xs text-gray-400">{user?.phone || 'No phone'}</div>
+                                            </td>
+                                            <td className="p-4 font-bold">
+                                                {type === 'WITHDRAW' ? <span className="text-red-600">-</span> : <span className="text-green-600">+</span>}
+                                                {tx.type.includes('USDT')
+                                                    ? <span>{tx.amount} USDT <span className="text-xs text-gray-400">(₹{tx.amountInr})</span></span>
+                                                    : <span>₹{tx.amount} INR</span>
+                                                }
+                                            </td>
+                                            <td className="p-4 text-xs font-mono text-gray-500">
+                                                {tx.type}<br />
+                                                {tx.utr || 'N/A'}
+                                            </td>
+                                            <td className="p-4">
+                                                <span className={`px-2 py-1 rounded text-xs font-bold ${tx.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                                                    tx.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                                        'bg-orange-100 text-orange-700'
+                                                    }`}>{tx.status}</span>
+                                            </td>
+                                            <td className="p-4 text-right space-x-2">
+                                                {tx.status === 'PENDING' && (
+                                                    <>
+                                                        <button onClick={() => handleProcessTx(tx.id, 'APPROVE')} className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-xs font-bold">Approve</button>
+                                                        <button onClick={() => handleProcessTx(tx.id, 'REJECT')} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs font-bold">Reject</button>
+                                                    </>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-3">
+                    {filtered.length === 0 && (
+                        <div className="bg-white rounded-xl p-8 text-center text-gray-400">
+                            No {type.toLowerCase()}s found
+                        </div>
+                    )}
+                    {filtered.map(tx => {
+                        const user = users.find(u => u.uid === tx.userId);
+                        return (
+                            <div key={tx.id} className="bg-white rounded-xl shadow-sm p-4">
+                                {/* Header Row */}
+                                <div className="flex justify-between items-start mb-3">
+                                    <div className="flex-1 min-w-0 mr-2">
+                                        <div className="font-bold text-gray-900 text-sm truncate">{user?.email || tx.userId}</div>
+                                        <div className="text-xs text-gray-400">{user?.phone || 'No phone'}</div>
+                                    </div>
+                                    <span className={`px-2 py-1 rounded text-xs font-bold flex-shrink-0 ${tx.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                                        tx.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                            'bg-orange-100 text-orange-700'
+                                        }`}>{tx.status}</span>
+                                </div>
+
+                                {/* Amount Row */}
+                                <div className="flex items-center justify-between mb-3">
+                                    <div>
+                                        <span className="text-gray-500 text-xs">Amount</span>
+                                        <div className="font-bold text-lg">
+                                            {type === 'WITHDRAW' ? <span className="text-red-600">-</span> : <span className="text-green-600">+</span>}
+                                            {tx.type.includes('USDT')
+                                                ? <span>{tx.amount} USDT</span>
+                                                : <span>₹{tx.amount}</span>
+                                            }
+                                        </div>
+                                        {tx.type.includes('USDT') && <div className="text-xs text-gray-400">≈ ₹{tx.amountInr}</div>}
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-gray-500 text-xs">Date</span>
+                                        <div className="text-xs text-gray-600">
+                                            {tx.date?.seconds ? new Date(tx.date.seconds * 1000).toLocaleDateString() : 'Just now'}
+                                        </div>
+                                        <div className="text-xs text-gray-400">
+                                            {tx.date?.seconds ? new Date(tx.date.seconds * 1000).toLocaleTimeString() : ''}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Method/UTR Row */}
+                                <div className="bg-gray-50 rounded-lg p-2 mb-3 text-xs">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">Method:</span>
+                                        <span className="font-medium text-gray-700">{tx.type}</span>
+                                    </div>
+                                    <div className="flex justify-between mt-1">
+                                        <span className="text-gray-500">UTR:</span>
+                                        <span className="font-mono text-gray-600">{tx.utr || 'N/A'}</span>
+                                    </div>
+                                </div>
+
+                                {/* Actions Row */}
+                                {tx.status === 'PENDING' && (
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleProcessTx(tx.id, 'APPROVE')}
+                                            className="flex-1 bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 text-sm font-bold"
+                                        >
+                                            ✓ Approve
+                                        </button>
+                                        <button
+                                            onClick={() => handleProcessTx(tx.id, 'REJECT')}
+                                            className="flex-1 bg-red-500 text-white px-4 py-3 rounded-lg hover:bg-red-600 text-sm font-bold"
+                                        >
+                                            ✗ Reject
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </>
+        );
+    };
+
+    const renderUsers = () => (
+        <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
                         <thead className="bg-gray-50 text-gray-600 font-bold border-b">
                             <tr>
-                                <th className="p-4">Date</th>
                                 <th className="p-4">User</th>
-                                <th className="p-4">Amount</th>
-                                <th className="p-4">Method/UTR</th>
+                                <th className="p-4">Balance</th>
+                                <th className="p-4">Location (IP)</th>
                                 <th className="p-4">Status</th>
                                 <th className="p-4 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {filtered.map(tx => {
-                                const user = users.find(u => u.uid === tx.userId);
-                                return (
-                                    <tr key={tx.id} className="hover:bg-gray-50">
-                                        <td className="p-4 text-gray-500 text-xs">
-                                            {tx.date?.seconds ? new Date(tx.date.seconds * 1000).toLocaleString() : 'Just now'}
-                                        </td>
-                                        <td className="p-4">
-                                            <div className="font-medium text-gray-900">{user?.email || tx.userId}</div>
-                                            <div className="text-xs text-gray-400">{user?.phone || 'No phone'}</div>
-                                        </td>
-                                        <td className="p-4 font-bold">
-                                            {type === 'WITHDRAW' ? <span className="text-red-600">-</span> : <span className="text-green-600">+</span>}
-                                            {tx.type.includes('USDT')
-                                                ? <span>{tx.amount} USDT <span className="text-xs text-gray-400">(₹{tx.amountInr})</span></span>
-                                                : <span>₹{tx.amount} INR</span>
-                                            }
-                                        </td>
-                                        <td className="p-4 text-xs font-mono text-gray-500">
-                                            {tx.type}<br />
-                                            {tx.utr || 'N/A'}
-                                        </td>
-                                        <td className="p-4">
-                                            <span className={`px-2 py-1 rounded text-xs font-bold ${tx.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                                                tx.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                                                    'bg-orange-100 text-orange-700'
-                                                }`}>{tx.status}</span>
-                                        </td>
-                                        <td className="p-4 text-right space-x-2">
-                                            {tx.status === 'PENDING' && (
-                                                <>
-                                                    <button onClick={() => handleProcessTx(tx.id, 'APPROVE')} className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-xs font-bold">Approve</button>
-                                                    <button onClick={() => handleProcessTx(tx.id, 'REJECT')} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs font-bold">Reject</button>
-                                                </>
-                                            )}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
+                            {users.map(u => (
+                                <tr key={u.uid} className="hover:bg-gray-50">
+                                    <td className="p-4">
+                                        <div className="font-bold text-gray-900">{u.email}</div>
+                                        <div className="text-xs text-gray-500">Code: {u.referralCode}</div>
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="text-green-600 font-medium">₹{u.inrBalance.toFixed(2)}</div>
+                                        <div className="text-blue-600 text-xs">{u.usdtBalance.toFixed(2)} USDT</div>
+                                    </td>
+                                    <td className="p-4 text-xs">
+                                        {u.lastLocation ? (
+                                            <>
+                                                <div className="font-semibold">{u.lastLocation.city}, {u.lastLocation.country}</div>
+                                                <div className="text-gray-400">{u.lastLocation.ip}</div>
+                                            </>
+                                        ) : 'Unknown'}
+                                    </td>
+                                    <td className="p-4">
+                                        {u.isBanned ? <span className="text-red-600 font-bold bg-red-50 px-2 py-1 rounded">BANNED</span> : <span className="text-green-600 font-bold bg-green-50 px-2 py-1 rounded">ACTIVE</span>}
+                                    </td>
+                                    <td className="p-4 text-right space-x-1">
+                                        {u.isBanned ? (
+                                            <button onClick={() => db_unbanUser(u.uid).then(fetchData)} className="bg-gray-500 text-white px-3 py-1 rounded text-xs">Unban</button>
+                                        ) : (
+                                            <div className="flex justify-end gap-1">
+                                                <button onClick={() => handleBan(u.uid, 1)} className="bg-red-100 text-red-600 px-2 py-1 rounded text-xs hover:bg-red-200">1 Day</button>
+                                                <button onClick={() => handleBan(u.uid, -1)} className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700">Perm</button>
+                                            </div>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>
             </div>
-        );
-    };
 
-    const renderUsers = () => (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <table className="w-full text-sm text-left">
-                <thead className="bg-gray-50 text-gray-600 font-bold border-b">
-                    <tr>
-                        <th className="p-4">User</th>
-                        <th className="p-4">Balance</th>
-                        <th className="p-4">Location (IP)</th>
-                        <th className="p-4">Status</th>
-                        <th className="p-4 text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                    {users.map(u => (
-                        <tr key={u.uid} className="hover:bg-gray-50">
-                            <td className="p-4">
-                                <div className="font-bold text-gray-900">{u.email}</div>
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+                {users.map(u => (
+                    <div key={u.uid} className="bg-white rounded-xl shadow-sm p-4">
+                        {/* User Info */}
+                        <div className="flex justify-between items-start mb-3">
+                            <div className="flex-1 min-w-0 mr-2">
+                                <div className="font-bold text-gray-900 text-sm truncate">{u.email}</div>
                                 <div className="text-xs text-gray-500">Code: {u.referralCode}</div>
-                            </td>
-                            <td className="p-4">
-                                <div className="text-green-600 font-medium">₹{u.inrBalance.toFixed(2)}</div>
-                                <div className="text-blue-600 text-xs">{u.usdtBalance.toFixed(2)} USDT</div>
-                            </td>
-                            <td className="p-4 text-xs">
-                                {u.lastLocation ? (
-                                    <>
-                                        <div className="font-semibold">{u.lastLocation.city}, {u.lastLocation.country}</div>
-                                        <div className="text-gray-400">{u.lastLocation.ip}</div>
-                                    </>
-                                ) : 'Unknown'}
-                            </td>
-                            <td className="p-4">
-                                {u.isBanned ? <span className="text-red-600 font-bold bg-red-50 px-2 py-1 rounded">BANNED</span> : <span className="text-green-600 font-bold bg-green-50 px-2 py-1 rounded">ACTIVE</span>}
-                            </td>
-                            <td className="p-4 text-right space-x-1">
-                                {u.isBanned ? (
-                                    <button onClick={() => db_unbanUser(u.uid).then(fetchData)} className="bg-gray-500 text-white px-3 py-1 rounded text-xs">Unban</button>
-                                ) : (
-                                    <div className="flex justify-end gap-1">
-                                        <button onClick={() => handleBan(u.uid, 1)} className="bg-red-100 text-red-600 px-2 py-1 rounded text-xs hover:bg-red-200">1 Day</button>
-                                        <button onClick={() => handleBan(u.uid, -1)} className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700">Perm</button>
-                                    </div>
-                                )}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
+                            </div>
+                            <div className="flex-shrink-0">
+                                {u.isBanned
+                                    ? <span className="text-red-600 font-bold bg-red-50 px-2 py-1 rounded text-xs">BANNED</span>
+                                    : <span className="text-green-600 font-bold bg-green-50 px-2 py-1 rounded text-xs">ACTIVE</span>}
+                            </div>
+                        </div>
+
+                        {/* Balance Row */}
+                        <div className="flex items-center gap-4 mb-3 text-sm">
+                            <div>
+                                <span className="text-gray-500 text-xs">Balance</span>
+                                <div className="text-green-600 font-bold">₹{u.inrBalance.toFixed(2)}</div>
+                            </div>
+                            <div>
+                                <span className="text-gray-500 text-xs">USDT</span>
+                                <div className="text-blue-600 font-bold">{u.usdtBalance.toFixed(2)}</div>
+                            </div>
+                        </div>
+
+                        {/* Location Row */}
+                        <div className="bg-gray-50 rounded-lg p-2 mb-3 text-xs">
+                            <span className="text-gray-500">Location: </span>
+                            {u.lastLocation ? (
+                                <span className="font-medium text-gray-700">
+                                    {u.lastLocation.city}, {u.lastLocation.country} • {u.lastLocation.ip}
+                                </span>
+                            ) : <span className="text-gray-400">Unknown</span>}
+                        </div>
+
+                        {/* Actions Row */}
+                        <div className="flex justify-end gap-2">
+                            {u.isBanned ? (
+                                <button onClick={() => db_unbanUser(u.uid).then(fetchData)} className="bg-gray-500 text-white px-4 py-2 rounded-lg text-xs font-bold flex-1">
+                                    Unban User
+                                </button>
+                            ) : (
+                                <>
+                                    <button onClick={() => handleBan(u.uid, 1)} className="bg-red-100 text-red-600 px-4 py-2 rounded-lg text-xs font-bold flex-1 hover:bg-red-200">
+                                        Ban 1 Day
+                                    </button>
+                                    <button onClick={() => handleBan(u.uid, -1)} className="bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-bold flex-1 hover:bg-red-700">
+                                        Ban Perm
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </>
     );
 
     const renderQuotas = () => (
@@ -611,23 +760,25 @@ const AdminPanel = () => {
         </div>
     );
 
+    const navItems = [
+        { id: 'DASHBOARD', icon: 'dashboard', label: 'Overview' },
+        { id: 'DEPOSITS', icon: 'payments', label: 'Deposits (INR)' },
+        { id: 'WITHDRAWALS', icon: 'account_balance_wallet', label: 'Withdrawals' },
+        { id: 'USERS', icon: 'people', label: 'User Management' },
+        { id: 'QUOTAS', icon: 'price_change', label: 'INR Quotas' },
+        { id: 'SETTINGS', icon: 'settings', label: 'System Settings' },
+    ];
+
     return (
         <div className="min-h-screen flex bg-gray-100 font-sans">
-            {/* Sidebar */}
-            <div className="w-64 bg-slate-900 text-white flex-shrink-0 hidden md:block">
+            {/* Desktop Sidebar */}
+            <div className="w-64 bg-slate-900 text-white flex-shrink-0 hidden md:flex md:flex-col">
                 <div className="p-6">
                     <h1 className="text-xl font-bold tracking-wider">ADMIN PANEL</h1>
                     <p className="text-xs text-slate-400">UMoney Management</p>
                 </div>
-                <nav className="px-2 space-y-1">
-                    {[
-                        { id: 'DASHBOARD', icon: 'dashboard', label: 'Overview' },
-                        { id: 'DEPOSITS', icon: 'payments', label: 'Deposits (INR)' },
-                        { id: 'WITHDRAWALS', icon: 'account_balance_wallet', label: 'Withdrawals' },
-                        { id: 'USERS', icon: 'people', label: 'User Management' },
-                        { id: 'QUOTAS', icon: 'price_change', label: 'INR Quotas' },
-                        { id: 'SETTINGS', icon: 'settings', label: 'System Settings' },
-                    ].map((item) => (
+                <nav className="px-2 space-y-1 flex-1">
+                    {navItems.map((item) => (
                         <button
                             key={item.id}
                             onClick={() => setActiveTab(item.id)}
@@ -638,7 +789,7 @@ const AdminPanel = () => {
                         </button>
                     ))}
                 </nav>
-                <div className="p-4 mt-auto">
+                <div className="p-4">
                     <button onClick={() => auth_signOut()} className="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-sm font-bold">
                         <span className="material-icons-round text-sm">logout</span>
                         <span>Sign Out</span>
@@ -646,27 +797,77 @@ const AdminPanel = () => {
                 </div>
             </div>
 
-            {/* Mobile Nav */}
-            <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                <header className="bg-white shadow-sm z-10 p-4 flex justify-between md:hidden">
-                    <span className="font-bold">Admin Panel</span>
-                    <button onClick={() => auth_signOut()} className="text-red-600 font-bold text-sm">Logout</button>
-                </header>
+            {/* Mobile Sidebar Overlay */}
+            {showMobileSidebar && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                    onClick={() => setShowMobileSidebar(false)}
+                />
+            )}
 
-                {/* Mobile Tabs */}
-                <div className="md:hidden flex overflow-x-auto bg-slate-900 text-white p-2 gap-2">
-                    {['DASHBOARD', 'DEPOSITS', 'WITHDRAWALS', 'USERS', 'QUOTAS', 'SETTINGS'].map(tab => (
-                        <button key={tab} onClick={() => setActiveTab(tab)} className={`px-3 py-1 rounded text-xs ${activeTab === tab ? 'bg-blue-600' : 'bg-slate-800'}`}>
-                            {tab}
+            {/* Mobile Sidebar */}
+            <div className={`fixed inset-y-0 left-0 w-72 bg-slate-900 text-white z-50 transform transition-transform duration-300 ease-in-out md:hidden ${showMobileSidebar ? 'translate-x-0' : '-translate-x-full'
+                }`}>
+                <div className="p-6 flex justify-between items-center border-b border-slate-800">
+                    <div>
+                        <h1 className="text-lg font-bold tracking-wider">ADMIN PANEL</h1>
+                        <p className="text-xs text-slate-400">UMoney Management</p>
+                    </div>
+                    <button
+                        onClick={() => setShowMobileSidebar(false)}
+                        className="p-2 hover:bg-slate-800 rounded-lg"
+                    >
+                        <span className="material-icons-round">close</span>
+                    </button>
+                </div>
+                <nav className="px-2 py-4 space-y-1">
+                    {navItems.map((item) => (
+                        <button
+                            key={item.id}
+                            onClick={() => {
+                                setActiveTab(item.id);
+                                setShowMobileSidebar(false);
+                            }}
+                            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${activeTab === item.id ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
+                        >
+                            <span className="material-icons-round">{item.icon}</span>
+                            <span className="font-medium">{item.label}</span>
                         </button>
                     ))}
+                </nav>
+                <div className="p-4 absolute bottom-0 left-0 right-0 border-t border-slate-800">
+                    <button onClick={() => auth_signOut()} className="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg text-sm font-bold">
+                        <span className="material-icons-round text-sm">logout</span>
+                        <span>Sign Out</span>
+                    </button>
                 </div>
+            </div>
+
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col h-screen overflow-hidden">
+                {/* Mobile Header */}
+                <header className="bg-white shadow-sm z-10 p-4 flex justify-between items-center md:hidden">
+                    <button
+                        onClick={() => setShowMobileSidebar(true)}
+                        className="p-2 hover:bg-gray-100 rounded-lg"
+                    >
+                        <span className="material-icons-round text-gray-700">menu</span>
+                    </button>
+                    <span className="font-bold text-gray-800">Admin Panel</span>
+                    <button onClick={fetchData} className="p-2 hover:bg-gray-100 rounded-lg">
+                        <span className={`material-icons-round text-blue-600 ${loading ? 'animate-spin' : ''}`}>refresh</span>
+                    </button>
+                </header>
 
                 {/* Main Content */}
-                <main className="flex-1 overflow-y-auto p-6">
+                <main className="flex-1 overflow-y-auto p-4 md:p-6">
                     <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold text-gray-800 capitalize">{activeTab.replace('_', ' ').toLowerCase()}</h2>
-                        <button onClick={fetchData} className="p-2 bg-white rounded-full shadow-sm hover:bg-gray-50">
+                        <h2 className="text-xl md:text-2xl font-bold text-gray-800 capitalize">
+                            {activeTab === 'USERS' ? 'User Management' :
+                                activeTab === 'QUOTAS' ? 'INR Quotas' :
+                                    activeTab.replace('_', ' ').toLowerCase()}
+                        </h2>
+                        <button onClick={fetchData} className="p-2 bg-white rounded-full shadow-sm hover:bg-gray-50 hidden md:block">
                             <span className={`material-icons-round text-blue-600 ${loading ? 'animate-spin' : ''}`}>refresh</span>
                         </button>
                     </div>

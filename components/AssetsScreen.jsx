@@ -150,23 +150,14 @@ const SupportCenterView = ({ onBack, systemSettings }) => {
     const [activeCategory, setActiveCategory] = useState(categories[0]);
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-32">
+        <div className="fixed inset-0 bg-gray-50 z-[60] overflow-y-auto">
             {/* Header */}
-            <div className="bg-indigo-800 pt-12 pb-4 px-4">
+            <div className="bg-indigo-800 pt-12 pb-6 px-4">
                 <div className="flex items-center">
                     <button onClick={onBack} className="mr-3 p-1 rounded-full hover:bg-white/10 transition-colors">
                         <span className="material-icons-round text-white">arrow_back</span>
                     </button>
                     <h1 className="text-lg font-bold text-white">Support Center</h1>
-                </div>
-            </div>
-
-            {/* General Tab (Only showing General, removed Video Tutorials) */}
-            <div className="bg-indigo-800 px-4 pb-4">
-                <div className="flex gap-2">
-                    <button className="flex-1 py-3 bg-white text-indigo-800 font-semibold rounded-lg shadow">
-                        General
-                    </button>
                 </div>
             </div>
 
@@ -178,8 +169,8 @@ const SupportCenterView = ({ onBack, systemSettings }) => {
                             key={category}
                             onClick={() => setActiveCategory(category)}
                             className={`px-4 py-2 text-xs font-semibold rounded-full whitespace-nowrap transition-all ${activeCategory === category
-                                    ? 'bg-indigo-800 text-white'
-                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                ? 'bg-indigo-800 text-white'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
                         >
                             {category}
@@ -189,7 +180,7 @@ const SupportCenterView = ({ onBack, systemSettings }) => {
             </div>
 
             {/* FAQ List */}
-            <div className="px-4 py-4">
+            <div className="px-4 py-4 pb-32">
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                     {faqData[activeCategory]?.map((faq, index) => (
                         <FAQItem
@@ -203,7 +194,7 @@ const SupportCenterView = ({ onBack, systemSettings }) => {
             </div>
 
             {/* Customer Service Section */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 z-20">
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 z-[70]">
                 <p className="text-xs text-gray-600 font-semibold mb-3">Customer Service</p>
                 <div className="flex justify-around">
                     <a

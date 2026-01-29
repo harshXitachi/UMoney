@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 
 const Home = () => {
   const [showWithdraw, setShowWithdraw] = useState(false);
+  const [showNoticePopup, setShowNoticePopup] = useState(false);
+  const [dontShowToday, setDontShowToday] = useState(false);
   const navigate = useNavigate();
   const { systemSettings } = useAuth();
 
@@ -19,8 +21,92 @@ const Home = () => {
     navigate('/deposit?tab=usdt');
   };
 
+  const handleNoticeConfirm = () => {
+    if (dontShowToday) {
+      // Save to localStorage to not show again today
+      localStorage.setItem('noticePopupDismissed', new Date().toDateString());
+    }
+    setShowNoticePopup(false);
+  };
+
   return (
     <div className="bg-brand-bg text-gray-800 font-sans antialiased min-h-screen relative pb-32">
+      {/* Notice Popup Modal */}
+      {showNoticePopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-fade-in">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-indigo-900 to-indigo-800 px-4 py-3 flex items-center justify-between">
+              <h2 className="text-white font-bold text-sm tracking-wide">NOTICE</h2>
+              <button
+                onClick={() => setShowNoticePopup(false)}
+                className="text-white/80 hover:text-white transition"
+              >
+                <span className="material-icons-round text-xl">close</span>
+              </button>
+            </div>
+
+            {/* Promotional Image */}
+            <div className="relative">
+              <img
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuABJlLhA70pp2xFeJuevWr8XUUWOau1bfKIUvKTs2ygB03xYZ8IzdgWGt-uG6Pjct4BLQ8nl81Zq4eUo9venMDnJqk2id8M1zukYneoPsQA6N3VdKhYGDwnO7DpfkYby9saPlxKuDs_Y8VczKekty3KcBwO5GsFFihVoO6NQUPtkQiiGmXPPrB7RbAUaZnw-X5B88DoFBcyyBMp_RqYNzhQvmbEWxutjJObwtKmQBxZzMqDCpIvvXCxmQs8kVks_A35OUeRTzTI4-3C"
+                alt="UMoney Promotion"
+                className="w-full h-auto"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-indigo-900/80"></div>
+              <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <div className="bg-blue-800 rounded-full p-2 mr-2">
+                    <span className="text-yellow-400 font-bold text-xl">U</span>
+                  </div>
+                  <span className="text-white font-bold text-xl tracking-wider">UMONEY</span>
+                </div>
+                <h3 className="text-yellow-400 font-black text-2xl mb-1">1USDT=₹102</h3>
+                <p className="text-green-400 font-bold text-lg">+3% BONUS</p>
+                <p className="text-white text-sm mt-2">On Every RECHARGE!</p>
+                <div className="flex flex-col items-start mt-3 space-y-1 text-white text-xs">
+                  <div className="flex items-center"><span className="text-green-400 mr-2">✓</span> Fast Payout</div>
+                  <div className="flex items-center"><span className="text-green-400 mr-2">✓</span> Big Rewards</div>
+                  <div className="flex items-center"><span className="text-green-400 mr-2">✓</span> Trusted Platform</div>
+                </div>
+                <div className="mt-4 text-yellow-400 font-bold text-lg">
+                  JOIN NOW &<br />START EARNING! 👆
+                </div>
+                <div className="mt-2 bg-green-500 text-white text-xs px-3 py-1 rounded-full inline-block">
+                  @UMoney_Wallet_Official
+                </div>
+              </div>
+            </div>
+
+            {/* Message */}
+            <div className="p-4 bg-gray-50">
+              <p className="text-gray-600 text-sm leading-relaxed">
+                If your Recharge is Pending, please do not cancel the order, please contact APP Customer Service immediately to process the order. You will lose all your money if you cancel your trading order.
+              </p>
+            </div>
+
+            {/* Checkbox and Confirm */}
+            <div className="p-4 border-t border-gray-100">
+              <label className="flex items-center text-sm text-gray-600 mb-4 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={dontShowToday}
+                  onChange={(e) => setDontShowToday(e.target.checked)}
+                  className="w-4 h-4 mr-3 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                Don't show today
+              </label>
+              <button
+                onClick={handleNoticeConfirm}
+                className="w-full py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-indigo-800 transition-all"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* BEGIN: Header */}
       {/* Top header with app title and support icon */}
       <header className="flex items-center justify-between px-4 py-3 bg-white sticky top-0 z-10 shadow-sm">
@@ -97,9 +183,12 @@ const Home = () => {
           <div className="absolute right-0 top-0 w-20 h-full bg-gradient-to-l from-blue-50 to-transparent pointer-events-none"></div>
         </section>
 
-        {/* Notification Bar */}
+        {/* Notification Bar - Clickable */}
         {/* Alert or announcement bar */}
-        <section className="bg-orange-400 rounded-full px-4 py-2 flex items-center shadow-sm text-white">
+        <section
+          onClick={() => setShowNoticePopup(true)}
+          className="bg-orange-400 rounded-full px-4 py-2 flex items-center shadow-sm text-white cursor-pointer hover:bg-orange-500 transition-colors"
+        >
           <svg className="h-5 w-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.664A2 2 0 009 13h2.028a2 2 0 002.383-1.44l1-5a2 2 0 00-1.82-2.33l-6.685-.815" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path></svg>
           <span className="text-sm font-medium truncate">Check out our latest updates!</span>
         </section>

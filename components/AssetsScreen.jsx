@@ -3,6 +3,248 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { auth_signOut, db_getTransactions, auth_updateUserPassword, db_ensureProfile } from '../firebase.js';
 
+// FAQ Data organized by category
+const faqData = {
+    'Account & Registration': [
+        {
+            question: 'Is this platform safe and trustworthy?',
+            shortAnswer: 'Yes. Our platform is well recognized in the market.',
+            fullAnswer: 'Yes. Our platform is well recognized in the market, and many users have successfully received their earnings.'
+        },
+        {
+            question: 'How do I get started?',
+            shortAnswer: 'Simply register an account and follow the guidance.',
+            fullAnswer: 'Simply register an account and follow the guidance from our support team. We\'ll walk you through every step.'
+        },
+        {
+            question: 'Do I need real-name verification to register?',
+            shortAnswer: 'No, but you need to link your Telegram account.',
+            fullAnswer: 'No, but you need to link your Telegram account to protect your funds and ensure the security of your withdrawals.'
+        },
+        {
+            question: 'Can one phone number register multiple accounts?',
+            shortAnswer: 'No. One phone number can only register one account.',
+            fullAnswer: 'No. One phone number can only be used to register and bind one UMONEY account. The system does not support using the same number for multiple accounts. Please avoid duplicate registrations to prevent account issues.'
+        }
+    ],
+    'Orders & Earnings': [
+        {
+            question: 'What happens if an order fails?',
+            shortAnswer: 'Check wallet connection, payment amount, and operation steps.',
+            fullAnswer: 'If an order fails, it is usually due to one of the following reasons:\n\n• The user canceled the order manually\n• The order was not completed according to our platform\'s step-by-step instructions\n• There was a payment shortfall in the wallet\n• The wrong wallet payment method was used\n• The TOOLS is not linked to Umoney / Not Online\n\n⚠️ Any of the above will result in a failed order. If none of these apply to your case, please contact our customer service team for further assistance.'
+        },
+        {
+            question: 'Order doesn\'t show as successful after payment?',
+            shortAnswer: 'Contact Telegram support with order details and payment proof.',
+            fullAnswer: 'Please contact our Telegram support immediately and provide the following:\n\n1. Your Umoney ID\n2. Photo Of The Order – Must clearly show: Order number, Date/Time, Recipient Account, IFSC, and UTR\n3. Video Proof Of Payment Invoice – Must clearly show: UPI ID, Payment History, Payment Status, Recipient Account, IFSC, and UTR'
+        },
+        {
+            question: 'How much can I earn?',
+            shortAnswer: 'Earnings depend on your activity and referrals.',
+            fullAnswer: 'Your earnings depend on your activity and how many people you invite who join and deposit. The more active you are, the more you can earn.'
+        },
+        {
+            question: 'How can I upgrade my account level?',
+            shortAnswer: 'Complete orders, stay active, and invite friends.',
+            fullAnswer: 'Completing orders regularly, staying active, and inviting friends can help you increase your level.'
+        },
+        {
+            question: 'When will the commission be credited?',
+            shortAnswer: 'Usually issued automatically after order completion.',
+            fullAnswer: 'Commission is usually issued automatically shortly after the order is completed. If there is any delay, please contact customer support.'
+        }
+    ],
+    'Withdrawals': [
+        {
+            question: 'My withdrawal is not working. What should I do?',
+            shortAnswer: 'Check withdrawal button, tools running, and place 2 orders.',
+            fullAnswer: 'Follow these steps:\n\n✅ Make sure your withdrawal button is ON\n✅ Keep all tools running\n✅ Restart your phone and open the app again\n✅ Use the wallet already linked and activated in Umoney to place TWO orders\n\nIf withdrawal shows "Expired / Offline", the payment failed — follow the diagnosis steps:\n\n🔧 Diagnosis Steps:\n• Restart your phone\n• Check tool status in the app\n• Turn OFF the withdrawal button for 2 minutes, then turn it ON\n• Ask a friend to send ₹3 to each of your UPI IDs (to verify they\'re active)\n• Change to a new UPI if it hasn\'t been updated for a long time\n• After diagnosing, place 2 orders to reactivate withdrawal'
+        },
+        {
+            question: 'What is the minimum withdrawal amount?',
+            shortAnswer: 'Minimum withdrawal threshold must remain above 500.',
+            fullAnswer: 'The minimum withdrawal threshold must remain above 500.'
+        },
+        {
+            question: 'How long does a withdrawal take?',
+            shortAnswer: 'System processes withdrawals every minute for 24 hours.',
+            fullAnswer: 'Withdrawal takes time. The system processes withdrawals every minute for 24 hours. If you have completed all the required steps, please keep the tool online and stay active — the system will automatically detect and process it.'
+        },
+        {
+            question: 'What if my withdrawal fails?',
+            shortAnswer: 'Check UPI status and follow diagnosis steps.',
+            fullAnswer: 'Check if your UPI is working properly and follow the diagnosis steps. If the issue persists, contact customer support.'
+        },
+        {
+            question: 'Can I bind multiple UPI accounts?',
+            shortAnswer: 'Yes, we recommend binding multiple active UPI accounts.',
+            fullAnswer: 'Yes, our platform allows you to bind multiple UPI accounts. We recommend linking multiple active and valid UPI accounts that can receive transfers properly, to avoid withdrawal failures or delays.'
+        }
+    ],
+    'Account Issues & Security': [
+        {
+            question: 'I forgot my password. How do I reset it?',
+            shortAnswer: 'Use the "Forgot Password" option on the login screen.',
+            fullAnswer: 'Use the "Forgot Password" option on the login screen and follow the steps to reset your password via your registered email or phone.'
+        },
+        {
+            question: 'How do I protect my account?',
+            shortAnswer: 'Use a strong password and never share your login details.',
+            fullAnswer: 'Use a strong password, enable two-factor authentication if available, and never share your login details with anyone. Always verify you\'re on the official app before entering credentials.'
+        },
+        {
+            question: 'Can I change my registered phone number?',
+            shortAnswer: 'Contact support to request a phone number change.',
+            fullAnswer: 'Please contact our customer support team via Telegram to request a phone number change. You may need to verify your identity.'
+        }
+    ],
+    'Recharge': [
+        {
+            question: 'How do I recharge my account?',
+            shortAnswer: 'Go to Deposit tab and follow the USDT or INR deposit process.',
+            fullAnswer: 'Navigate to the Deposit tab from the bottom menu. You can choose to deposit via USDT or purchase quota with INR. Follow the on-screen instructions to complete your recharge.'
+        },
+        {
+            question: 'My recharge is pending. What should I do?',
+            shortAnswer: 'Do not cancel. Contact support immediately.',
+            fullAnswer: 'If your recharge is pending, please do not cancel the order. Contact APP Customer Service immediately to process the order. You will lose all your money if you cancel your trading order.'
+        },
+        {
+            question: 'What is the minimum recharge amount?',
+            shortAnswer: 'Minimum depends on your selected quota package.',
+            fullAnswer: 'The minimum recharge amount depends on the quota package you select. Check the Deposit screen for available options and their requirements.'
+        }
+    ]
+};
+
+// FAQ Accordion Item Component
+const FAQItem = ({ question, shortAnswer, fullAnswer }) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <div className="border-b border-gray-100 last:border-none">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full py-4 px-4 flex items-start justify-between text-left hover:bg-gray-50 transition-colors"
+            >
+                <div className="flex-1 pr-4">
+                    <h3 className="font-semibold text-gray-800 text-sm">{question}</h3>
+                    <p className="text-xs text-gray-500 mt-1">{shortAnswer}</p>
+                </div>
+                <span className={`material-icons-round text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}>
+                    expand_more
+                </span>
+            </button>
+            {isOpen && (
+                <div className="px-4 pb-4 text-sm text-gray-600 whitespace-pre-line bg-gray-50 mx-4 mb-4 rounded-lg p-4">
+                    {fullAnswer}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// Support Center View Component
+const SupportCenterView = ({ onBack, systemSettings }) => {
+    const categories = Object.keys(faqData);
+    const [activeCategory, setActiveCategory] = useState(categories[0]);
+
+    return (
+        <div className="min-h-screen bg-gray-50 pb-32">
+            {/* Header */}
+            <div className="bg-indigo-800 pt-12 pb-4 px-4">
+                <div className="flex items-center">
+                    <button onClick={onBack} className="mr-3 p-1 rounded-full hover:bg-white/10 transition-colors">
+                        <span className="material-icons-round text-white">arrow_back</span>
+                    </button>
+                    <h1 className="text-lg font-bold text-white">Support Center</h1>
+                </div>
+            </div>
+
+            {/* General Tab (Only showing General, removed Video Tutorials) */}
+            <div className="bg-indigo-800 px-4 pb-4">
+                <div className="flex gap-2">
+                    <button className="flex-1 py-3 bg-white text-indigo-800 font-semibold rounded-lg shadow">
+                        General
+                    </button>
+                </div>
+            </div>
+
+            {/* Category Tabs */}
+            <div className="bg-white shadow-sm sticky top-0 z-10">
+                <div className="flex overflow-x-auto no-scrollbar px-2 py-3 gap-2">
+                    {categories.map((category) => (
+                        <button
+                            key={category}
+                            onClick={() => setActiveCategory(category)}
+                            className={`px-4 py-2 text-xs font-semibold rounded-full whitespace-nowrap transition-all ${activeCategory === category
+                                    ? 'bg-indigo-800 text-white'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                        >
+                            {category}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* FAQ List */}
+            <div className="px-4 py-4">
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                    {faqData[activeCategory]?.map((faq, index) => (
+                        <FAQItem
+                            key={index}
+                            question={faq.question}
+                            shortAnswer={faq.shortAnswer}
+                            fullAnswer={faq.fullAnswer}
+                        />
+                    ))}
+                </div>
+            </div>
+
+            {/* Customer Service Section */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 z-20">
+                <p className="text-xs text-gray-600 font-semibold mb-3">Customer Service</p>
+                <div className="flex justify-around">
+                    <a
+                        href={systemSettings?.telegramSupportLink || 'https://t.me/umoney_support'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-col items-center text-center"
+                    >
+                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                            <span className="material-icons-round text-blue-600">send</span>
+                        </div>
+                        <span className="text-xs text-gray-600">Telegram</span>
+                    </a>
+                    <a
+                        href={systemSettings?.telegramSupportLink || 'https://t.me/umoney_support'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-col items-center text-center"
+                    >
+                        <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-2">
+                            <span className="material-icons-round text-indigo-600">support_agent</span>
+                        </div>
+                        <span className="text-xs text-gray-600">Contact Support</span>
+                    </a>
+                    <a
+                        href={systemSettings?.telegramGroupLink || 'https://t.me/umoney_group'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-col items-center text-center"
+                    >
+                        <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-2">
+                            <span className="material-icons-round text-purple-600">groups</span>
+                        </div>
+                        <span className="text-xs text-gray-600">Join Group</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const AssetsScreen = () => {
     const { userProfile, currentUser, systemSettings } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -195,24 +437,10 @@ const AssetsScreen = () => {
                     <> {renderHeader('Withdrawal History')} {renderTransactionList(transactions, 'No withdrawals found.')} </>
                 )}
                 {currentView === 'SUPPORT' && (
-                    <>
-                        {renderHeader('Support Center')}
-                        <div className="px-4">
-                            <div className="bg-white rounded-xl shadow-sm p-6 text-center">
-                                <img src="https://cdn-icons-png.flaticon.com/512/4961/4961759.png" alt="Support" className="w-24 h-24 mx-auto mb-4 opacity-80" />
-                                <h3 className="text-lg font-bold text-gray-800 mb-2">How can we help?</h3>
-                                <p className="text-sm text-gray-500 mb-6">Our team is available 24/7 to assist you with any issues.</p>
-                                <a
-                                    href={systemSettings?.telegramSupportLink || 'https://t.me/umoney_support'}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-full bg-blue-500 text-white font-bold py-3 rounded-lg shadow hover:bg-blue-600 flex items-center justify-center gap-2"
-                                >
-                                    <i className="fab fa-telegram text-xl"></i> Chat on Telegram
-                                </a>
-                            </div>
-                        </div>
-                    </>
+                    <SupportCenterView
+                        onBack={() => setCurrentView('MAIN')}
+                        systemSettings={systemSettings}
+                    />
                 )}
                 {currentView === 'CHANGE_PASSWORD' && (
                     <> {renderHeader('Change Password')} {renderChangePassword()} </>

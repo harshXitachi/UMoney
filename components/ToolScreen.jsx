@@ -14,17 +14,48 @@ const generateRandomUpiId = () => {
     return `${result}@ybl`;
 };
 
+// Helper to generate random phone number
+const generateRandomPhone = () => {
+    const prefixes = ['7', '8', '9'];
+    let phone = prefixes[Math.floor(Math.random() * prefixes.length)];
+    for (let i = 0; i < 9; i++) {
+        phone += Math.floor(Math.random() * 10);
+    }
+    return phone;
+};
+
+// Provider logos/icons
+const providerIcons = {
+    'PhonePe': (
+        <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+            <span className="text-white font-bold text-lg">₹</span>
+        </div>
+    ),
+    'Google Pay': (
+        <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-gray-200">
+            <span className="font-bold text-sm" style={{ background: 'linear-gradient(135deg, #4285F4, #34A853, #FBBC05, #EA4335)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>G</span>
+        </div>
+    ),
+    'Paytm': (
+        <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+            <span className="text-white font-bold text-sm">P</span>
+        </div>
+    )
+};
+
 // Main Component
 const ToolScreen = () => {
     const navigate = useNavigate();
     const { userProfile, loading: userLoading, currentUser } = useAuth();
 
     // State
-    const [showLinkModal, setShowLinkModal] = useState(false);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [showOperationModal, setShowOperationModal] = useState(false);
     const [linking, setLinking] = useState(false);
     const [error, setError] = useState('');
     const [selectedProvider, setSelectedProvider] = useState('PhonePe');
     const [upiId, setUpiId] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [retrying, setRetrying] = useState(false);
 
     const linked = useMemo(() => userProfile?.linkedAccount, [userProfile]);
@@ -40,12 +71,13 @@ const ToolScreen = () => {
             const newLink = {
                 provider: selectedProvider,
                 upiId: upiId,
+                phoneNumber: phoneNumber || generateRandomPhone(),
                 linkedAt: new Date().toISOString(),
-                operateEnabled: true,
+                operateEnabled: false,
                 verificationStatus: 'VERIFIED'
             };
             await db_updateUserProfile(userProfile.uid, { linkedAccount: newLink });
-            setShowLinkModal(false);
+            setShowAddModal(false);
         } catch (e) {
             setError('Failed to link account. Please try again.');
             console.error(e);
@@ -59,6 +91,20 @@ const ToolScreen = () => {
         await db_updateUserProfile(userProfile.uid, {
             'linkedAccount.operateEnabled': !linked.operateEnabled
         });
+        setShowOperationModal(false);
+    };
+
+    const handleConnect = async () => {
+        // Reconnect wallet automatically
+        setShowOperationModal(false);
+        if (linked && !linked.operateEnabled) {
+            await handleToggleOperate();
+        }
+    };
+
+    const handleAuthorize = () => {
+        // Manual authorization process - just close modal for now
+        setShowOperationModal(false);
     };
 
     if (userLoading) {
@@ -70,7 +116,7 @@ const ToolScreen = () => {
         setRetrying(true);
         try {
             await db_ensureProfile(currentUser.uid, currentUser.email || '');
-            window.location.reload(); // Reload to trigger context refresh
+            window.location.reload();
         } catch (e) {
             console.error("Failed to create profile", e);
             let errorMsg = "Failed to recover profile.";
@@ -105,41 +151,232 @@ const ToolScreen = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 pb-24">
             {/* Header */}
-            <div className="bg-white shadow-sm p-4">
-                <h1 className="text-2xl font-bold text-center text-gray-800">My Tool</h1>
+            <header className="flex items-center justify-between px-4 py-3 bg-white shadow-sm">
+                <div className="w-6"></div>
+                <h1 className="text-lg font-bold text-gray-800">Tools</h1>
+                <button
+                    aria-label="Support"
+                    className="w-6 h-6 text-indigo-600"
+                    onClick={() => navigate('/assets?view=support')}
+                >
+                    <span className="material-icons-round text-2xl">support_agent</span>
+                </button>
+            </header>
+
+            <div className="p-4 space-y-4">
+                {/* Connected Wallet Card */}
+                {linked && (
+                    <div
+                        className="rounded-2xl p-4 shadow-lg text-white relative overflow-hidden"
+                        style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 50%, #a78bfa 100%)' }}
+                    >
+                        {/* Watermark */}
+                        <div className="absolute right-4 bottom-2 text-white/20 text-4xl font-bold tracking-widest">
+                            {linked.provider === 'PhonePe' ? 'PhonePe' : linked.provider === 'Google Pay' ? 'GPay' : 'Paytm'}
+                        </div>
+
+                        <div className="flex items-center justify-between relative z-10">
+                            <div className="flex items-center space-x-3">
+                                {/* Provider Icon */}
+                                {providerIcons[linked.provider] || providerIcons['PhonePe']}
+
+                                <div>
+                                    <p className="font-semibold text-sm">{linked.upiId}</p>
+                                    <p className="text-white/70 text-xs">{linked.phoneNumber || '9851805067'}</p>
+                                </div>
+                            </div>
+
+                            {/* Operate/Stop Button */}
+                            {linked.operateEnabled ? (
+                                <button
+                                    onClick={() => setShowOperationModal(true)}
+                                    className="px-4 py-1.5 bg-red-500 text-white text-xs font-bold rounded-full shadow-md hover:bg-red-600 transition-all flex items-center gap-1"
+                                >
+                                    <span className="material-icons-round text-sm">stop</span>
+                                    STOP
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => setShowOperationModal(true)}
+                                    className="px-4 py-1.5 bg-gradient-to-r from-orange-400 to-orange-500 text-white text-xs font-bold rounded-full shadow-md hover:from-orange-500 hover:to-orange-600 transition-all"
+                                >
+                                    Operate
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Info Banner */}
+                        <div className="mt-4 bg-white/10 rounded-lg px-3 py-2 flex items-center text-xs text-white/80">
+                            <span className="material-icons-round text-sm mr-2">info</span>
+                            Please relink tool or modify the upi and relink.
+                        </div>
+                    </div>
+                )}
+
+                {/* Empty State when no wallet */}
+                {!linked && (
+                    <div className="text-center py-16">
+                        <span className="material-icons-outlined text-6xl text-gray-300 mb-4">account_balance_wallet</span>
+                        <h2 className="text-lg font-semibold text-gray-700 mb-2">No Wallet Connected</h2>
+                        <p className="text-sm text-gray-500 mb-6">Tap the + button to connect a wallet</p>
+                    </div>
+                )}
             </div>
 
-            <div className="p-4 space-y-6">
-                {/* Tool Status Card */}
-                <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-                    {linked ? (
+            {/* Floating Action Button */}
+            <button
+                onClick={() => {
+                    setUpiId(generateRandomUpiId());
+                    setPhoneNumber(generateRandomPhone());
+                    setShowAddModal(true);
+                }}
+                className="fixed bottom-24 right-4 w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-xl flex items-center justify-center hover:from-indigo-700 hover:to-purple-700 transition-all z-40"
+            >
+                <span className="material-icons-round text-3xl">add</span>
+            </button>
+
+            {/* Add Wallet Modal */}
+            {showAddModal && (
+                <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-md rounded-t-3xl p-6 shadow-2xl animate-slide-up">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-lg font-bold text-gray-800">Connect Wallet</h2>
+                            <button
+                                onClick={() => setShowAddModal(false)}
+                                className="text-gray-400 hover:text-gray-600"
+                            >
+                                <span className="material-icons-round">close</span>
+                            </button>
+                        </div>
+
                         <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <h2 className="text-lg font-semibold text-gray-800">Your Connected Tool</h2>
-                                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${linked.operateEnabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                    }`}>
-                                    {linked.operateEnabled ? 'OPERATING' : 'STOPPED'}
-                                </span>
+                            {/* Provider Selection */}
+                            <div>
+                                <label className="text-xs font-semibold text-gray-500 mb-2 block">Select Wallet</label>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {['PhonePe', 'Google Pay', 'Paytm'].map((p) => (
+                                        <button
+                                            key={p}
+                                            onClick={() => setSelectedProvider(p)}
+                                            className={`py-3 px-2 text-xs font-semibold rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${selectedProvider === p
+                                                ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
+                                                : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-400'
+                                                }`}
+                                        >
+                                            {providerIcons[p]}
+                                            <span>{p}</span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                            <div className="border-t border-gray-200 pt-4 space-y-3 text-sm">
-                                <p className="flex justify-between">
-                                    <span className="text-gray-500">Provider:</span>
-                                    <span className="font-medium text-gray-900">{linked.provider}</span>
-                                </p>
-                                <p className="flex justify-between">
-                                    <span className="text-gray-500">UPI ID:</span>
-                                    <span className="font-mono bg-gray-100 px-2 py-1 rounded">{linked.upiId}</span>
-                                </p>
-                                <p className="flex justify-between">
-                                    <span className="text-gray-500">Linked On:</span>
-                                    <span className="text-gray-900">{new Date(linked.linkedAt).toLocaleDateString()}</span>
-                                </p>
+
+                            {/* UPI ID Input */}
+                            <div>
+                                <label className="text-xs font-semibold text-gray-500 mb-1 block">UPI ID</label>
+                                <input
+                                    type="text"
+                                    value={upiId}
+                                    onChange={(e) => setUpiId(e.target.value)}
+                                    placeholder="yourname@ybl"
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                />
                             </div>
+
+                            {/* Phone Number Input */}
+                            <div>
+                                <label className="text-xs font-semibold text-gray-500 mb-1 block">Phone Number</label>
+                                <input
+                                    type="tel"
+                                    value={phoneNumber}
+                                    onChange={(e) => setPhoneNumber(e.target.value)}
+                                    placeholder="9876543210"
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                />
+                            </div>
+
+                            {error && (
+                                <p className="text-xs text-red-600 bg-red-50 p-3 rounded-xl">{error}</p>
+                            )}
+
+                            <button
+                                onClick={handleLink}
+                                disabled={linking}
+                                className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-indigo-700 hover:to-purple-700 transition-all disabled:opacity-50 flex items-center justify-center"
+                            >
+                                {linking ? (
+                                    <>
+                                        <span className="material-icons-round animate-spin text-lg mr-2">sync</span>
+                                        Connecting...
+                                    </>
+                                ) : 'Connect Wallet'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Operation Modal (Bottom Sheet) */}
+            {showOperationModal && linked && (
+                <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-md rounded-t-3xl p-6 shadow-2xl animate-slide-up">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-lg font-bold text-gray-800">Select Operation</h2>
+                            <button
+                                onClick={() => setShowOperationModal(false)}
+                                className="text-gray-400 hover:text-gray-600"
+                            >
+                                <span className="material-icons-round">close</span>
+                            </button>
+                        </div>
+
+                        {/* Connected Wallet Info */}
+                        <div
+                            className="rounded-xl p-4 mb-6"
+                            style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)' }}
+                        >
+                            <div className="flex items-center space-x-3 text-white">
+                                {providerIcons[linked.provider] || providerIcons['PhonePe']}
+                                <div>
+                                    <p className="font-semibold text-sm">{linked.upiId}</p>
+                                    <p className="text-white/70 text-xs">Phone: {linked.phoneNumber || '9851805067'}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Operation Options */}
+                        <div className="space-y-3">
+                            <button
+                                onClick={handleConnect}
+                                className="w-full p-4 bg-gray-50 rounded-xl flex items-center gap-4 hover:bg-gray-100 transition-all"
+                            >
+                                <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                                    <span className="material-icons-round text-indigo-600">link</span>
+                                </div>
+                                <div className="text-left">
+                                    <p className="font-semibold text-gray-800">Connect</p>
+                                    <p className="text-xs text-gray-500">Reconnect wallet automatically</p>
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={handleAuthorize}
+                                className="w-full p-4 bg-gray-50 rounded-xl flex items-center gap-4 hover:bg-gray-100 transition-all"
+                            >
+                                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                                    <span className="material-icons-round text-orange-600">verified_user</span>
+                                </div>
+                                <div className="text-left">
+                                    <p className="font-semibold text-gray-800">Authorize</p>
+                                    <p className="text-xs text-gray-500">Manual authorization process</p>
+                                </div>
+                            </button>
+
+                            {/* Toggle Operation Button */}
                             <button
                                 onClick={handleToggleOperate}
-                                className={`w-full py-3 mt-4 text-white font-semibold rounded-lg shadow-md transition-all duration-300 ${linked.operateEnabled
+                                className={`w-full py-3 mt-4 text-white font-semibold rounded-xl shadow-md transition-all ${linked.operateEnabled
                                     ? 'bg-red-500 hover:bg-red-600'
                                     : 'bg-green-500 hover:bg-green-600'
                                     }`}
@@ -147,109 +384,26 @@ const ToolScreen = () => {
                                 {linked.operateEnabled ? 'Stop Operation' : 'Start Operation'}
                             </button>
                         </div>
-                    ) : (
-                        <div className="text-center py-8">
-                            <span className="material-icons-outlined text-6xl text-gray-400 mb-4">link_off</span>
-                            <h2 className="text-lg font-semibold text-gray-700 mb-2">No Tool Connected</h2>
-                            <p className="text-sm text-gray-500 mb-6">Connect a UPI tool to start making deposits.</p>
-                            <button
-                                onClick={() => {
-                                    setUpiId(generateRandomUpiId());
-                                    setShowLinkModal(true);
-                                }}
-                                className="bg-indigo-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-indigo-700 transition-all duration-300"
-                            >
-                                Connect Now
-                            </button>
-                        </div>
-                    )}
-                </div>
-
-                {/* Info Boxes */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div className="bg-white rounded-xl shadow p-4 border border-gray-200">
-                        <h3 className="font-semibold text-gray-800 mb-2">How it works?</h3>
-                        <p className="text-gray-600">
-                            Connect your UPI app as a "tool". When you deposit, you'll pay from this linked UPI. This automates verification.
-                        </p>
-                    </div>
-                    <div className="bg-white rounded-xl shadow p-4 border border-gray-200">
-                        <h3 className="font-semibold text-gray-800 mb-2">Is it safe?</h3>
-                        <p className="text-gray-600">
-                            Yes. We never ask for your UPI PIN or password. We only use the UPI ID to verify payments you make.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Link Modal */}
-            {showLinkModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-                    <div className="bg-white w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl slide-up">
-                        <h2 className="text-lg font-bold text-gray-800 mb-4">Connect UPI Tool</h2>
-
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-xs font-semibold text-gray-500 mb-1 block">Select App</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {['PhonePe', 'Google Pay', 'Paytm'].map((p) => (
-                                        <button
-                                            key={p}
-                                            onClick={() => setSelectedProvider(p)}
-                                            className={`py-2 px-3 text-sm font-semibold rounded-md border-2 transition-all ${selectedProvider === p
-                                                ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
-                                                : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-400'
-                                                }`}
-                                        >
-                                            {p}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="text-xs font-semibold text-gray-500 mb-1 block">UPI ID (VPA)</label>
-                                <input
-                                    type="text"
-                                    value={upiId}
-                                    onChange={(e) => setUpiId(e.target.value)}
-                                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                />
-                            </div>
-
-                            {error && (
-                                <p className="text-xs text-red-600 bg-red-50 p-2 rounded-md">{error}</p>
-                            )}
-
-                            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 text-xs text-yellow-800">
-                                <p><span className="font-bold">We will verify this UPI ID.</span> Ensure your {selectedProvider} app is installed and active on this device.</p>
-                            </div>
-                        </div>
-
-                        <div className="mt-6 flex gap-3">
-                            <button
-                                onClick={() => setShowLinkModal(false)}
-                                className="w-full py-2 px-4 text-sm font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-                                disabled={linking}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleLink}
-                                className="w-full py-2 px-4 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-indigo-400 flex items-center justify-center"
-                                disabled={linking}
-                            >
-                                {linking ? (
-                                    <>
-                                        <span className="material-icons-round animate-spin text-base mr-2">sync</span>
-                                        Connecting...
-                                    </>
-                                ) : 'Connect'}
-                            </button>
-                        </div>
                     </div>
                 </div>
             )}
+
+            {/* Slide up animation style */}
+            <style>{`
+                @keyframes slide-up {
+                    from {
+                        transform: translateY(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateY(0);
+                        opacity: 1;
+                    }
+                }
+                .animate-slide-up {
+                    animation: slide-up 0.3s ease-out;
+                }
+            `}</style>
         </div>
     );
 };

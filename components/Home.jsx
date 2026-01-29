@@ -177,7 +177,7 @@ const Home = () => {
           </div>
           {/* Gold Coin Illustration */}
           <div className="z-10">
-            <img alt="USDT Coin" className="w-16 h-16 object-contain drop-shadow-lg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyLobRMU6KSWH0jM_vmoDU1uzVXnCsS755sd0yWHzTvl0IC4k12Dy8xG7GRAH_omLst0-65R1QdpnZWcj31PYhlW-LwS3pBDGwTGU-T5k51GW56BosqWEdrXzU1v43x6-JVs7SC0HKyTORIfFYm4-kIYYUYbsaX3ASljUBHfBfEsH9tAuSXsF4I5sUmqqz6F8Xn2-crtpJtp_-371U3HrPGamxrJfyiQXa08GNs4nrMrST1xjLGupJK6t37o8xddt8eDaxiDcEtoTg" />
+            <img alt="USDT Coin" className="w-16 h-16 object-contain drop-shadow-lg" src="/ucoin.png" />
           </div>
           {/* Decorative background blur effect */}
           <div className="absolute right-0 top-0 w-20 h-full bg-gradient-to-l from-blue-50 to-transparent pointer-events-none"></div>

@@ -99,7 +99,7 @@ Using my code gets you bonus rewards when you join. 🎁`;
               {/* Simple QR placeholder - in production you'd use a QR library */}
               <div className="w-48 h-48 bg-white border-2 border-gray-200 rounded-lg flex items-center justify-center mb-4">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(appDownloadLink + '\n\nInvite Code: ' + inviteCode)}`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(appDownloadLink)}`}
                   alt="QR Code"
                   className="w-44 h-44"
                 />

@@ -23,6 +23,7 @@ const DepositScreen = () => {
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [showQuotaVideo, setShowQuotaVideo] = useState(false);
 
   // Dynamic Settings from Admin
   const MERCHANT_VPA = systemSettings?.adminUpi || "pay.umoney@upi";
@@ -221,7 +222,7 @@ const DepositScreen = () => {
                     <span className="text-gray-500 font-medium">Quota</span>
                     <i className="fas fa-info-circle text-gray-300"></i>
                   </div>
-                  <a className="text-app-blue text-xs font-medium hover:underline" href="#">How To Buy Quota</a>
+                  <button onClick={() => setShowQuotaVideo(true)} className="text-app-blue text-xs font-medium hover:underline">How To Buy Quota</button>
                 </div>
 
                 <div className="text-center mb-6">
@@ -372,7 +373,7 @@ const DepositScreen = () => {
                       <span>Quota</span>
                       <i className="fas fa-eye text-[#999] ml-2 text-sm"></i>
                     </div>
-                    <a className="text-xs text-[#2546a3] hover:underline" href="#">How To Buy Quota</a>
+                    <button onClick={() => setShowQuotaVideo(true)} className="text-xs text-[#2546a3] hover:underline">How To Buy Quota</button>
                   </div>
                   <div className="text-center py-4">
                     <span className="text-[28px] font-bold text-[#1e3a8a]">
@@ -508,6 +509,39 @@ const DepositScreen = () => {
               >
                 Okay, Got it
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Quota Video Popup Modal */}
+        {showQuotaVideo && (
+          <div
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowQuotaVideo(false)}
+          >
+            <div
+              className="bg-white w-full max-w-lg rounded-t-3xl p-4 pb-8 shadow-2xl animate-slide-up"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-800">How To Buy Quota</h3>
+                <button
+                  onClick={() => setShowQuotaVideo(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition"
+                >
+                  <span className="material-icons-round text-gray-500">close</span>
+                </button>
+              </div>
+              <div className="bg-black rounded-xl overflow-hidden aspect-video">
+                <iframe
+                  src="https://drive.google.com/file/d/19Nv5pcGhH2YtdzZJ7ifjbA6nyY6yeW-r/preview"
+                  className="w-full h-full"
+                  allow="autoplay; encrypted-media"
+                  allowFullScreen
+                  title="How to buy quota"
+                ></iframe>
+              </div>
+              <p className="text-xs text-gray-500 text-center mt-4">Watch the video to learn how to purchase quota</p>
             </div>
           </div>
         )}

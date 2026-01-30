@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -6,9 +6,47 @@ const Home = () => {
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [showNoticePopup, setShowNoticePopup] = useState(false);
   const [dontShowToday, setDontShowToday] = useState(false);
+  const [showVideoPopup, setShowVideoPopup] = useState(false);
+  const [countdown, setCountdown] = useState({ hours: 0, minutes: 0 });
   const navigate = useNavigate();
-  const { systemSettings } = useAuth();
+  const { systemSettings, userProfile } = useAuth();
 
+  // Calculate time until midnight reset
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = new Date();
+      const midnight = new Date();
+      midnight.setHours(24, 0, 0, 0);
+      const diff = midnight - now;
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      setCountdown({ hours, minutes });
+    };
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
+
+  // Check if today matches user's daily recharge date
+  const today = new Date().toDateString();
+  const isToday = userProfile?.dailyRechargeDate === today;
+  const dailyRechargeTotal = isToday ? (userProfile?.dailyRechargeTotal || 0) : 0;
+  const claimedBonuses = isToday ? (userProfile?.claimedDailyBonuses || []) : [];
+
+  // Bonus thresholds
+  const bonusThresholds = systemSettings?.dailyRechargeBonuses || [
+    { threshold: 10000, bonus: 100 },
+    { threshold: 20000, bonus: 200 },
+    { threshold: 30000, bonus: 300 },
+    { threshold: 40000, bonus: 400 },
+    { threshold: 50000, bonus: 500 },
+    { threshold: 60000, bonus: 600 },
+    { threshold: 70000, bonus: 700 },
+  ];
+
+  // Calculate progress percentage (max 70k)
+  const maxThreshold = 70000;
+  const progressPercent = Math.min((dailyRechargeTotal / maxThreshold) * 100, 100);
   // Get USDT rate from admin settings, fallback to 99.0
   const usdtRate = systemSettings?.usdtRate || 99.0;
 
@@ -199,45 +237,61 @@ const Home = () => {
           <div className="flex justify-between items-start mb-4">
             <div>
               <h2 className="text-brand-blue font-semibold text-sm">Daily Total Recharge :</h2>
-              <p className="text-gray-500 font-bold text-lg">₹0.00</p>
+              <p className="text-gray-500 font-bold text-lg">₹{dailyRechargeTotal.toLocaleString()}</p>
             </div>
-            {/* Timer */}
+            {/* Countdown Timer */}
             <div className="flex space-x-1">
-              <div className="bg-cyan-500 text-white text-xs font-bold py-1 px-1.5 rounded">1</div>
-              <div className="bg-cyan-500 text-white text-xs font-bold py-1 px-1.5 rounded">1</div>
+              <div className="bg-cyan-500 text-white text-xs font-bold py-1 px-1.5 rounded">{Math.floor(countdown.hours / 10)}</div>
+              <div className="bg-cyan-500 text-white text-xs font-bold py-1 px-1.5 rounded">{countdown.hours % 10}</div>
               <span className="text-cyan-500 font-bold">:</span>
-              <div className="bg-cyan-500 text-white text-xs font-bold py-1 px-1.5 rounded">0</div>
-              <div className="bg-cyan-500 text-white text-xs font-bold py-1 px-1.5 rounded">3</div>
+              <div className="bg-cyan-500 text-white text-xs font-bold py-1 px-1.5 rounded">{Math.floor(countdown.minutes / 10)}</div>
+              <div className="bg-cyan-500 text-white text-xs font-bold py-1 px-1.5 rounded">{countdown.minutes % 10}</div>
             </div>
           </div>
           {/* Horizontal Scrollable Coins */}
           <div className="relative w-full">
             <div className="flex overflow-x-auto no-scrollbar space-x-6 pb-2 items-end">
-              {/* Coin Items */}
-              {[100, 200, 300, 400, 500, 600, 700].map(amount => (
-                <div key={amount} className="flex flex-col items-center min-w-[40px]">
-                  <div className="relative">
-                    <img alt="Coin" className="w-10 h-10 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyLobRMU6KSWH0jM_vmoDU1uzVXnCsS755sd0yWHzTvl0IC4k12Dy8xG7GRAH_omLst0-65R1QdpnZWcj31PYhlW-LwS3pBDGwTGU-T5k51GW56BosqWEdrXzU1v43x6-JVs7SC0HKyTORIfFYm4-kIYYUYbsaX3ASljUBHfBfEsH9tAuSXsF4I5sUmqqz6F8Xn2-crtpJtp_-371U3HrPGamxrJfyiQXa08GNs4nrMrST1xjLGupJK6t37o8xddt8eDaxiDcEtoTg" />
-                    <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[8px] font-bold px-1 rounded-full border border-white">+</span>
+              {/* Coin Items - dynamic based on claimed bonuses */}
+              {bonusThresholds.map(tier => {
+                const isClaimed = claimedBonuses.includes(tier.threshold);
+                const canClaim = dailyRechargeTotal >= tier.threshold && !isClaimed;
+                return (
+                  <div key={tier.threshold} className="flex flex-col items-center min-w-[40px]">
+                    <div className="relative">
+                      <img
+                        alt="Coin"
+                        className={`w-10 h-10 object-contain ${isClaimed ? 'grayscale opacity-50' : ''}`}
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyLobRMU6KSWH0jM_vmoDU1uzVXnCsS755sd0yWHzTvl0IC4k12Dy8xG7GRAH_omLst0-65R1QdpnZWcj31PYhlW-LwS3pBDGwTGU-T5k51GW56BosqWEdrXzU1v43x6-JVs7SC0HKyTORIfFYm4-kIYYUYbsaX3ASljUBHfBfEsH9tAuSXsF4I5sUmqqz6F8Xn2-crtpJtp_-371U3HrPGamxrJfyiQXa08GNs4nrMrST1xjLGupJK6t37o8xddt8eDaxiDcEtoTg"
+                      />
+                      {isClaimed ? (
+                        <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[8px] font-bold px-1 rounded-full border border-white">✓</span>
+                      ) : (
+                        <span className={`absolute -top-1 -right-1 ${canClaim ? 'bg-orange-500 animate-pulse' : 'bg-green-500'} text-white text-[8px] font-bold px-1 rounded-full border border-white`}>+</span>
+                      )}
+                    </div>
+                    <span className={`text-[10px] font-bold mt-1 ${isClaimed ? 'text-gray-400' : 'text-brand-blue'}`}>{tier.bonus}</span>
                   </div>
-                  <span className="text-[10px] text-brand-blue font-bold mt-1">{amount}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
           {/* Custom Progress Bar */}
           <div className="mt-4 relative">
             {/* Track */}
             <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-              <div className="h-full bg-blue-600 w-[5%] rounded-full"></div>
+              <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${progressPercent}%` }}></div>
             </div>
             {/* Progress Indicators (Static Visuals) */}
             <div className="flex justify-between text-[8px] text-gray-400 mt-1 px-1">
               {['10k', '20k', '30k', '40k', '50k', '60k', '70k', '80k'].map(label => <span key={label}>{label}</span>)}
             </div>
-            {/* Knobs on track (Decorative) */}
-            <div className="absolute top-[-3px] left-[10%] w-2.5 h-2.5 bg-white border-2 border-gray-300 rounded-full"></div>
-            <div className="absolute top-[-3px] left-[50%] w-2.5 h-2.5 bg-white border-2 border-gray-300 rounded-full"></div>
+            {/* Dynamic progress indicator */}
+            {progressPercent > 0 && (
+              <div
+                className="absolute top-[-3px] w-2.5 h-2.5 bg-blue-600 border-2 border-white rounded-full shadow-md transition-all duration-500"
+                style={{ left: `${progressPercent}%`, transform: 'translateX(-50%)' }}
+              ></div>
+            )}
           </div>
         </section>
 
@@ -282,7 +336,10 @@ const Home = () => {
 
         {/* Help Button */}
         {/* Navigational button to help section */}
-        <button className="w-full bg-indigo-500 hover:bg-indigo-600 text-white rounded-full py-3 px-4 flex items-center justify-center shadow-md transition">
+        <button
+          onClick={() => setShowVideoPopup(true)}
+          className="w-full bg-indigo-500 hover:bg-indigo-600 text-white rounded-full py-3 px-4 flex items-center justify-center shadow-md transition"
+        >
           <div className="bg-white rounded-full w-5 h-5 flex items-center justify-center mr-3">
             <svg className="h-3 w-3 text-indigo-500 ml-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
               <path d="M6 4l10 6-10 6V4z"></path>
@@ -292,6 +349,39 @@ const Home = () => {
         </button>
       </main>
       {/* END: Main Content */}
+
+      {/* Video Popup Modal - Outside main for proper z-index stacking */}
+      {showVideoPopup && (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowVideoPopup(false)}
+        >
+          <div
+            className="bg-white w-full max-w-lg rounded-t-3xl p-4 pb-8 shadow-2xl animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-800">How to Use UMoney</h3>
+              <button
+                onClick={() => setShowVideoPopup(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition"
+              >
+                <span className="material-icons-round text-gray-500">close</span>
+              </button>
+            </div>
+            <div className="bg-black rounded-xl overflow-hidden aspect-video">
+              <iframe
+                src="https://drive.google.com/file/d/1Se34r9SWeE15KrGy2-FmrXTs4XUJdQ9r/preview"
+                className="w-full h-full"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+                title="How to use UMoney"
+              ></iframe>
+            </div>
+            <p className="text-xs text-gray-500 text-center mt-4">Watch the video to learn how to earn with UMoney</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -45,6 +45,16 @@ const DEFAULT_SETTINGS = {
         { id: 'q5', amount: 900, percent: 3.00, activity: 6.00 },
         { id: 'q6', amount: 1300, percent: 3.00, activity: 6.00 },
     ],
+    // Daily Recharge Bonus Thresholds (threshold in INR -> bonus amount)
+    dailyRechargeBonuses: [
+        { threshold: 10000, bonus: 100 },
+        { threshold: 20000, bonus: 200 },
+        { threshold: 30000, bonus: 300 },
+        { threshold: 40000, bonus: 400 },
+        { threshold: 50000, bonus: 500 },
+        { threshold: 60000, bonus: 600 },
+        { threshold: 70000, bonus: 700 },
+    ],
     // Support settings
     telegramSupportLink: "https://t.me/umoney_support"
 };
@@ -233,7 +243,72 @@ export const db_adminProcessTransaction = async (txId, action) => {
                 // For USDT deposits, use amountInr (converted value)
                 // For INR deposits, use amount directly
                 const creditAmount = tx.amountInr || tx.amount;
-                await updateDoc(userRef, { inrBalance: user.inrBalance + creditAmount });
+
+                // Get today's date string for daily tracking
+                const today = new Date().toDateString();
+                const userDailyDate = user.dailyRechargeDate || '';
+
+                // Calculate new daily recharge total
+                let newDailyTotal = creditAmount;
+                let previousDailyTotal = 0;
+                let claimedBonuses = [];
+
+                if (userDailyDate === today) {
+                    // Same day - add to existing total
+                    previousDailyTotal = user.dailyRechargeTotal || 0;
+                    newDailyTotal = previousDailyTotal + creditAmount;
+                    claimedBonuses = user.claimedDailyBonuses || [];
+                }
+
+                // Check for bonus milestones
+                const settings = await db_getSystemSettings();
+                const bonusThresholds = settings.dailyRechargeBonuses || [
+                    { threshold: 10000, bonus: 100 },
+                    { threshold: 20000, bonus: 200 },
+                    { threshold: 30000, bonus: 300 },
+                    { threshold: 40000, bonus: 400 },
+                    { threshold: 50000, bonus: 500 },
+                    { threshold: 60000, bonus: 600 },
+                    { threshold: 70000, bonus: 700 },
+                ];
+
+                let bonusToAward = 0;
+                let newClaimedBonuses = [...claimedBonuses];
+
+                for (const tier of bonusThresholds) {
+                    // Check if we just crossed this threshold and haven't claimed it yet
+                    if (newDailyTotal >= tier.threshold &&
+                        previousDailyTotal < tier.threshold &&
+                        !claimedBonuses.includes(tier.threshold)) {
+                        bonusToAward += tier.bonus;
+                        newClaimedBonuses.push(tier.threshold);
+                    }
+                }
+
+                // Update user balance and daily tracking
+                const updates = {
+                    inrBalance: user.inrBalance + creditAmount,
+                    dailyRechargeTotal: newDailyTotal,
+                    dailyRechargeDate: today,
+                    claimedDailyBonuses: newClaimedBonuses
+                };
+
+                // If bonus was earned, add it to balance and create bonus transaction
+                if (bonusToAward > 0) {
+                    updates.inrBalance = user.inrBalance + creditAmount + bonusToAward;
+
+                    // Create bonus transaction record
+                    await addDoc(collection(db, 'transactions'), {
+                        userId: tx.userId,
+                        type: 'BONUS',
+                        amount: bonusToAward,
+                        status: 'APPROVED',
+                        description: `Daily Recharge Bonus (₹${newDailyTotal.toLocaleString()} milestone)`,
+                        date: serverTimestamp()
+                    });
+                }
+
+                await updateDoc(userRef, updates);
             } else if (tx.type === 'WITHDRAW') {
                 await updateDoc(userRef, { inrBalance: user.inrBalance - tx.amount });
             }
